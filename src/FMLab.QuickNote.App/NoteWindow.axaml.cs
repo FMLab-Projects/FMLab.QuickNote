@@ -3,7 +3,9 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using FMLab.QuickNote.Core.Editor;
+using FMLab.QuickNote.Core.Notes;
 using FMLab.QuickNote.Core.Settings;
 
 namespace FMLab.QuickNote.App;
@@ -11,19 +13,29 @@ namespace FMLab.QuickNote.App;
 /// <summary>
 /// Janela principal (shell minimalista): sem barra de título, sempre no topo, esconde (não
 /// fecha) via Esc ou pelo botão de fechar do sistema, e foca o editor ao ser exibida. Posição e
-/// tamanho são lembrados entre sessões via <see cref="IWindowPlacementStore"/>.
+/// tamanho são lembrados entre sessões via <see cref="IWindowPlacementStore"/>. O ciclo de vida
+/// da nota (criar/atualizar/concluir) é delegado à <see cref="NoteEditingSession"/>; esta classe
+/// só traduz os TextBox de/para texto puro (e o formato de exibição do checkbox — ver
+/// <see cref="StructuredTextEditor"/>).
 /// </summary>
 public partial class NoteWindow : Window
 {
-    private readonly IWindowPlacementStore _placementStore;
+    private static readonly TimeSpan AutosaveDebounce = TimeSpan.FromMilliseconds(1500);
 
-    public NoteWindow() : this(new FileWindowPlacementStore(FileWindowPlacementStore.GetDefaultPath()))
+    private readonly IWindowPlacementStore _placementStore;
+    private readonly NoteEditingSession _session;
+    private readonly DispatcherTimer _autosaveTimer;
+
+    public NoteWindow() : this(
+        new FileWindowPlacementStore(FileWindowPlacementStore.GetDefaultPath()),
+        new FileNoteRepository(FileNoteRepository.GetDefaultDirectory()))
     {
     }
 
-    public NoteWindow(IWindowPlacementStore placementStore)
+    public NoteWindow(IWindowPlacementStore placementStore, INoteRepository noteRepository)
     {
         _placementStore = placementStore;
+        _session = new NoteEditingSession(noteRepository);
         InitializeComponent();
 
         ApplySavedPlacement();
@@ -36,6 +48,23 @@ public partial class NoteWindow : Window
 
         BodyTextBox.KeyDown += OnBodyKeyDown;
         BodyTextBox.PointerReleased += OnBodyPointerReleased;
+
+        // Autosave (debounce curto): reduz a perda de conteúdo se o processo cair antes do
+        // usuário fechar/esconder a janela (que já salva no ato).
+        _autosaveTimer = new DispatcherTimer { Interval = AutosaveDebounce };
+        _autosaveTimer.Tick += (_, _) =>
+        {
+            _autosaveTimer.Stop();
+            SaveCurrentNote();
+        };
+        TitleTextBox.TextChanged += (_, _) => RestartAutosaveTimer();
+        BodyTextBox.TextChanged += (_, _) => RestartAutosaveTimer();
+    }
+
+    private void RestartAutosaveTimer()
+    {
+        _autosaveTimer.Stop();
+        _autosaveTimer.Start();
     }
 
     private void ApplySavedPlacement()
@@ -80,7 +109,12 @@ public partial class NoteWindow : Window
         var selectionStart = BodyTextBox.SelectionStart;
         var selectionEnd = BodyTextBox.SelectionEnd;
 
-        if (e.Key == Key.Tab)
+        if (e.Key == Key.Enter && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            CompleteCurrentNote();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Tab)
         {
             ApplyEdit(e.KeyModifiers.HasFlag(KeyModifiers.Shift)
                 ? StructuredTextEditor.Outdent(text, selectionStart, selectionEnd)
@@ -118,14 +152,16 @@ public partial class NoteWindow : Window
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
     {
-        // Ciclo de vida real (Fase 6): fechar esconde e persiste; o processo só encerra pelo
-        // menu "Sair" da bandeja.
+        // Fechar (Esc, botão do SO) esconde e salva; o processo só encerra pelo menu "Sair" da
+        // bandeja.
         e.Cancel = true;
         HideAndPersist();
     }
 
     private void HideAndPersist()
     {
+        _autosaveTimer.Stop();
+        SaveCurrentNote();
         Hide();
         SavePlacement();
     }
@@ -147,5 +183,57 @@ public partial class NoteWindow : Window
         {
             ShowAndFocus();
         }
+    }
+
+    /// <summary>Salva a nota aberta (se houver algo digitado) e abre a janela com uma nota em branco.</summary>
+    public void ShowNewNote()
+    {
+        SaveCurrentNote();
+        _session.LoadBlank();
+        ClearEditor();
+        ShowAndFocus();
+    }
+
+    /// <summary>Salva a nota aberta (se houver algo digitado) e carrega o rascunho ativo mais recente.</summary>
+    public void ShowPreviousDraft()
+    {
+        SaveCurrentNote();
+        var draft = _session.LoadPreviousDraft();
+        if (draft is not null)
+        {
+            LoadNoteIntoEditor(draft);
+        }
+        else
+        {
+            ClearEditor();
+        }
+
+        ShowAndFocus();
+    }
+
+    /// <summary>
+    /// Salva a nota aberta, marca como concluída (soft delete) e abre uma nota em branco em
+    /// seguida — mantém a janela pronta para a próxima captura rápida.
+    /// </summary>
+    public void CompleteCurrentNote()
+    {
+        _session.CompleteCurrent(TitleTextBox.Text, GetStorageContent());
+        ClearEditor();
+    }
+
+    private void SaveCurrentNote() => _session.SaveIfNeeded(TitleTextBox.Text, GetStorageContent());
+
+    private string GetStorageContent() => StructuredTextEditor.ToStorageText(BodyTextBox.Text ?? string.Empty);
+
+    private void ClearEditor()
+    {
+        TitleTextBox.Text = string.Empty;
+        BodyTextBox.Text = string.Empty;
+    }
+
+    private void LoadNoteIntoEditor(Note note)
+    {
+        TitleTextBox.Text = note.Title ?? string.Empty;
+        BodyTextBox.Text = StructuredTextEditor.ToDisplayText(note.Content);
     }
 }
