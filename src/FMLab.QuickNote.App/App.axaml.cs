@@ -17,6 +17,7 @@ public partial class App : Application
     private NoteWindow? _noteWindow;
     private HistoryWindow? _historyWindow;
     private SettingsWindow? _settingsWindow;
+    private AboutWindow? _aboutWindow;
     private GlobalHotkeyService? _globalHotkeyService;
     private CommandPipeServer? _commandPipeServer;
 
@@ -49,6 +50,8 @@ public partial class App : Application
             _settingsWindow = new SettingsWindow();
             _settingsWindow.BindingsSaved += ReloadShortcutBindings;
             _settingsWindow.FontSettingsSaved += ReloadFontSettings;
+
+            _aboutWindow = new AboutWindow();
 
             SetupTrayIcon(desktop);
             _ = SetupGlobalHotkeyServiceAsync();
@@ -120,6 +123,9 @@ public partial class App : Application
         var settingsItem = new NativeMenuItem("Configurações");
         settingsItem.Click += (_, _) => _settingsWindow?.ShowAndRefresh();
 
+        var aboutItem = new NativeMenuItem("Sobre");
+        aboutItem.Click += (_, _) => _aboutWindow?.ShowAndActivate();
+
         var exitItem = new NativeMenuItem("Sair");
         exitItem.Click += (_, _) => desktop.Shutdown();
 
@@ -127,6 +133,8 @@ public partial class App : Application
         trayIcon.Menu.Items.Add(editDraftItem);
         trayIcon.Menu.Items.Add(openHistoryItem);
         trayIcon.Menu.Items.Add(settingsItem);
+        trayIcon.Menu.Items.Add(new NativeMenuItemSeparator());
+        trayIcon.Menu.Items.Add(aboutItem);
         trayIcon.Menu.Items.Add(new NativeMenuItemSeparator());
         trayIcon.Menu.Items.Add(exitItem);
 
