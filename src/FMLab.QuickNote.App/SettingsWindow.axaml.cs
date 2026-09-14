@@ -7,38 +7,58 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using FMLab.QuickNote.App.Autostart;
+using FMLab.QuickNote.App.Fonts;
 using FMLab.QuickNote.App.Shortcuts;
+using FMLab.QuickNote.Core.Settings;
 using FMLab.QuickNote.Core.Shortcuts;
 
 namespace FMLab.QuickNote.App;
 
 /// <summary>
 /// Tela de configurações: remapear cada atalho (captura de tecla + validação de conflito
-/// dentro do mesmo escopo, ver <see cref="ShortcutConflictDetector"/>) e ligar/desligar o
-/// autostart. Salvar atalhos persiste no <see cref="IShortcutBindingsStore"/> e dispara
-/// <see cref="BindingsSaved"/> para a <c>App</c> reaplicar os bindings em tempo real (janelas
-/// já abertas + o hook global, sem precisar reiniciar o processo).
+/// dentro do mesmo escopo, ver <see cref="ShortcutConflictDetector"/>), ligar/desligar o
+/// autostart, e escolher a fonte do editor. Salvar atalhos persiste no
+/// <see cref="IShortcutBindingsStore"/> e dispara <see cref="BindingsSaved"/>; salvar a fonte
+/// persiste no <see cref="IFontSettingsStore"/> e dispara <see cref="FontSettingsSaved"/> — a
+/// <c>App</c> reaplica os dois em tempo real (janelas já abertas + o hook global, sem precisar
+/// reiniciar o processo).
 /// </summary>
 public partial class SettingsWindow : Window
 {
+    /// <summary>Item de exibição do <c>ComboBox</c> de fonte; <c>FontFamily == null</c> representa o fallback default.</summary>
+    private sealed record FontOption(string? FontFamily, string Label)
+    {
+        public override string ToString() => Label;
+    }
+
     private readonly IShortcutBindingsStore _bindingsStore;
+    private readonly IFontSettingsStore _fontSettingsStore;
     private readonly IAutostartService _autostartService;
     private readonly Dictionary<ShortcutAction, KeyCombo> _workingBindings = new();
 
     private ShortcutAction? _capturingAction;
+    private bool _loadingFontSettings;
 
     /// <summary>Disparado depois que os atalhos são salvos com sucesso (sem conflitos).</summary>
     public event Action? BindingsSaved;
 
+    /// <summary>Disparado depois que a fonte do editor é salva.</summary>
+    public event Action? FontSettingsSaved;
+
     public SettingsWindow() : this(
         new FileShortcutBindingsStore(FileShortcutBindingsStore.GetDefaultPath()),
+        new FileFontSettingsStore(FileFontSettingsStore.GetDefaultPath()),
         AutostartServiceFactory.Create())
     {
     }
 
-    public SettingsWindow(IShortcutBindingsStore bindingsStore, IAutostartService autostartService)
+    public SettingsWindow(
+        IShortcutBindingsStore bindingsStore,
+        IFontSettingsStore fontSettingsStore,
+        IAutostartService autostartService)
     {
         _bindingsStore = bindingsStore;
+        _fontSettingsStore = fontSettingsStore;
         _autostartService = autostartService;
 
         InitializeComponent();
@@ -53,6 +73,7 @@ public partial class SettingsWindow : Window
         Closing += OnClosing;
 
         LoadWorkingBindings();
+        LoadWorkingFontSettings();
     }
 
     /// <summary>Recarrega do disco (descarta edições não salvas) e mostra a janela.</summary>
@@ -60,9 +81,56 @@ public partial class SettingsWindow : Window
     {
         _capturingAction = null;
         LoadWorkingBindings();
+        LoadWorkingFontSettings();
         AutostartCheckBox.IsChecked = _autostartService.IsEnabled();
         Show();
         Activate();
+    }
+
+    private void LoadWorkingFontSettings()
+    {
+        _loadingFontSettings = true;
+
+        var options = new List<FontOption> { new(null, "Padrão (monoespaçada do sistema)") };
+        options.AddRange(MonospaceFontCatalog.GetInstalledFontNames().Select(name => new FontOption(name, name)));
+        FontFamilyComboBox.ItemsSource = options;
+
+        var saved = _fontSettingsStore.Load() ?? FontSettings.Default;
+        FontFamilyComboBox.SelectedItem = options.FirstOrDefault(o =>
+            string.Equals(o.FontFamily, saved.FontFamily, StringComparison.OrdinalIgnoreCase)) ?? options[0];
+        FontSizeNumericUpDown.Value = (decimal)(saved.FontSize > 0 ? saved.FontSize : FontSettings.DefaultFontSize);
+
+        _loadingFontSettings = false;
+        UpdateFontPreview();
+    }
+
+    private void OnFontFamilyChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingFontSettings)
+        {
+            return;
+        }
+
+        UpdateFontPreview();
+    }
+
+    private void OnFontSizeChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_loadingFontSettings)
+        {
+            return;
+        }
+
+        UpdateFontPreview();
+    }
+
+    private void UpdateFontPreview()
+    {
+        var familyName = (FontFamilyComboBox.SelectedItem as FontOption)?.FontFamily;
+        FontPreviewText.FontFamily = string.IsNullOrEmpty(familyName)
+            ? new FontFamily(FontSettings.DefaultFontFamily)
+            : new FontFamily(familyName);
+        FontPreviewText.FontSize = (double)(FontSizeNumericUpDown.Value ?? (decimal)FontSettings.DefaultFontSize);
     }
 
     private void LoadWorkingBindings()
@@ -157,11 +225,17 @@ public partial class SettingsWindow : Window
         }
 
         _bindingsStore.Save(bindings);
+
+        var fontFamily = (FontFamilyComboBox.SelectedItem as FontOption)?.FontFamily;
+        var fontSize = (double)(FontSizeNumericUpDown.Value ?? (decimal)FontSettings.DefaultFontSize);
+        _fontSettingsStore.Save(new FontSettings { FontFamily = fontFamily, FontSize = fontSize });
+
         StatusText.Foreground = Brushes.LightGreen;
-        StatusText.Text = "Atalhos salvos.";
+        StatusText.Text = "Configurações salvas.";
         StatusText.IsVisible = true;
 
         BindingsSaved?.Invoke();
+        FontSettingsSaved?.Invoke();
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
