@@ -77,10 +77,10 @@ public partial class App : Application
         switch (command)
         {
             case AppCommand.NewNote:
+                _noteWindow?.ShowNewNote();
+                break;
             case AppCommand.EditDraft:
-                // Fluxo real de "nova nota" vs. "editar rascunho" chega na Fase 6; por ora
-                // ambos só trazem a janela à frente.
-                _noteWindow?.ShowAndFocus();
+                _noteWindow?.ShowPreviousDraft();
                 break;
             case AppCommand.OpenHistory:
                 // Tela de histórico ainda não existe (Fase 8); por ora só traz a janela à frente.
