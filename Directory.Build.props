@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- Versão central do produto (aplicada a todos os projetos da solução).
+       Enquanto o app não atinge uma v1 estável, o VersionSuffix "beta" fica
+       fixo — bump do VersionPrefix a cada release notável. -->
+  <PropertyGroup>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix>beta</VersionSuffix>
+  </PropertyGroup>
+
+</Project>

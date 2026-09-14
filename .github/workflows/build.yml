@@ -1,0 +1,78 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  DOTNET_NOLOGO: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
+jobs:
+  build-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+  package:
+    name: Package (${{ matrix.rid }})
+    needs: build-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [win-x64, linux-x64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Resolve app version
+        id: version
+        run: |
+          prefix=$(grep -oP '(?<=<VersionPrefix>)[^<]+' Directory.Build.props)
+          suffix=$(grep -oP '(?<=<VersionSuffix>)[^<]+' Directory.Build.props)
+          version="$prefix-$suffix"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Publish self-contained (${{ matrix.rid }})
+        run: |
+          dotnet publish src/FMLab.QuickNote.App/FMLab.QuickNote.App.csproj \
+            --configuration Release \
+            --runtime ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            --output "dist/${{ matrix.rid }}"
+
+      - name: Zip package
+        run: |
+          cd "dist/${{ matrix.rid }}"
+          zip -r "../../FMLab.QuickNote-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FMLab.QuickNote-${{ steps.version.outputs.version }}-${{ matrix.rid }}
+          path: FMLab.QuickNote-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip
+          retention-days: 30
