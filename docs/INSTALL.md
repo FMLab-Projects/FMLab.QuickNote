@@ -33,8 +33,15 @@ instalado), por RID em `dist/<rid>/`:
 
 ## Windows
 
-- Baixe/copie `FMLab.QuickNote.App.exe` e rode diretamente — não precisa de instalador.
-- Como o executável não é assinado digitalmente, o SmartScreen pode alertar
+- Duas opções, ambas publicadas nos GitHub Releases:
+  - **Instalador** (`FMLab.QuickNote-<versão>-win-x64-Setup.exe`, gerado via
+    Inno Setup — script em [`installer/windows/FMLab.QuickNote.iss`](../installer/windows/FMLab.QuickNote.iss)):
+    cria atalhos no Menu Iniciar/Desktop e um desinstalador. Não exige
+    admin — instala por padrão em `%LOCALAPPDATA%\Programs`, com opção de
+    elevar para Program Files.
+  - **Portátil**: baixe/copie `FMLab.QuickNote.App.exe` (do zip `win-x64`) e
+    rode diretamente, sem instalar nada.
+- Como nenhum dos dois é assinado digitalmente, o SmartScreen pode alertar
   no primeiro clique duplo ("Windows protegeu seu PC"); use "Mais
   informações" → "Executar assim mesmo". Assinatura de código fica fora do
   escopo da v1.
