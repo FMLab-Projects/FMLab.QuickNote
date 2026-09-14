@@ -82,9 +82,12 @@ public partial class HistoryWindow : Window
             _ => HistoryFilter.All,
         };
 
-        var notes = filter.Apply(_noteRepository.GetHistory());
+        var allNotes = _noteRepository.GetHistory();
+        var notes = filter.Apply(allNotes);
         NotesListBox.ItemsSource = notes.Select(n => new NoteListItem(n)).ToList();
         EmptyStateText.IsVisible = notes.Count == 0;
+
+        FooterText.Text = HistoryStats.From(allNotes).ToString();
     }
 
     private void OnReopenClick(object? sender, RoutedEventArgs e)
