@@ -21,33 +21,68 @@ public sealed class CommandPipeServer : IDisposable
 
     private async Task RunAsync(CancellationToken token)
     {
-        while (!token.IsCancellationRequested)
+        // Commands are still handled strictly one at a time, in connection order (a single
+        // CommandReceived invocation in flight at any point) — only the *accept* step is
+        // pipelined: the next instance starts listening before the current connection is read,
+        // so there is never a gap with nothing listening. Windows tolerates such a gap (a
+        // connecting client just waits); the Unix domain socket backing this on Linux/macOS
+        // does not — a client that connects during the gap is silently dropped, which used to
+        // make this loop miss commands sent in quick succession there.
+        NamedPipeServerStream? next = CreateServer();
+        Task nextConnect = next.WaitForConnectionAsync(token);
+
+        try
         {
-            try
+            while (!token.IsCancellationRequested)
             {
-                using var server = new NamedPipeServerStream(
-                    _pipeName, PipeDirection.In, maxNumberOfServerInstances: 1,
-                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-
-                await server.WaitForConnectionAsync(token).ConfigureAwait(false);
-
-                using var reader = new StreamReader(server);
-                var line = await reader.ReadLineAsync(token).ConfigureAwait(false);
-                if (line is not null && AppCommandNames.TryParse(line, out var command))
+                var server = next;
+                try
                 {
-                    CommandReceived?.Invoke(command);
+                    await nextConnect.ConfigureAwait(false);
+                }
+                catch (IOException)
+                {
+                    // Couldn't accept this instance; drop it and try a fresh one.
+                    server.Dispose();
+                    next = CreateServer();
+                    nextConnect = next.WaitForConnectionAsync(token);
+                    continue;
+                }
+
+                next = CreateServer();
+                nextConnect = next.WaitForConnectionAsync(token);
+
+                using (server)
+                {
+                    try
+                    {
+                        using var reader = new StreamReader(server);
+                        var line = await reader.ReadLineAsync(token).ConfigureAwait(false);
+                        if (line is not null && AppCommandNames.TryParse(line, out var command))
+                        {
+                            CommandReceived?.Invoke(command);
+                        }
+                    }
+                    catch (IOException)
+                    {
+                        // Client went away mid-read; keep serving future connections.
+                    }
                 }
             }
-            catch (OperationCanceledException)
-            {
-                // Shutting down.
-            }
-            catch (IOException)
-            {
-                // Client went away mid-connect/read; keep serving future connections.
-            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Shutting down.
+        }
+        finally
+        {
+            next.Dispose();
         }
     }
+
+    private NamedPipeServerStream CreateServer() => new(
+        _pipeName, PipeDirection.In, maxNumberOfServerInstances: 2,
+        PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
 
     public void Dispose()
     {
