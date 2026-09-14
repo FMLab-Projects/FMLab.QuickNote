@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <!-- Ícone do executável no Windows (Explorer/taskbar); a bandeja usa o ícone gerado em
-         runtime em App.axaml.cs. Fontes em assets/icons/ (ver Fase 10 do TASKS.md). -->
+    <!-- Ícone do executável no Windows (Explorer/taskbar). A bandeja carrega icon-256.png
+         (embutido via AvaloniaResource abaixo) em App.axaml.cs. Fontes em assets/icons/. -->
     <ApplicationIcon>../../assets/icons/icon.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -25,5 +25,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FMLab.QuickNote.Core\FMLab.QuickNote.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="../../assets/icons/icon-256.png" Link="Assets/icon-256.png" />
   </ItemGroup>
 </Project>

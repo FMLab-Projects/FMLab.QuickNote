@@ -2,9 +2,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
-using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -191,35 +189,10 @@ public partial class App : Application
         _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ação não é um atalho global."),
     };
 
-    // Gera o ícone da bandeja em runtime (sem depender de um asset .ico externo); um
-    // ícone real por plataforma entra na Fase 10.
     private static WindowIcon CreateIcon()
     {
-        const int size = 32;
-        var pixelSize = new PixelSize(size, size);
-        var visual = new Border
-        {
-            Width = size,
-            Height = size,
-            Background = Brushes.SlateBlue,
-            CornerRadius = new CornerRadius(6),
-            Child = new TextBlock
-            {
-                Text = "Q",
-                Foreground = Brushes.White,
-                FontWeight = FontWeight.Bold,
-                FontSize = 18,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            }
-        };
-
-        visual.Measure(new Size(size, size));
-        visual.Arrange(new Rect(0, 0, size, size));
-
-        var bitmap = new RenderTargetBitmap(pixelSize);
-        bitmap.Render(visual);
-
-        return new WindowIcon(bitmap);
+        var uri = new Uri("avares://FMLab.QuickNote.App/Assets/icon-256.png");
+        using var stream = AssetLoader.Open(uri);
+        return new WindowIcon(new Bitmap(stream));
     }
 }
