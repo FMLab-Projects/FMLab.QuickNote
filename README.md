@@ -38,7 +38,10 @@ Configurações e Sair (o único jeito de encerrar o processo de verdade).
 O editor é texto simples estruturado (sem rich text): `- ` inicia uma lista
 com marcador (`Enter` continua a lista, linha vazia sai dela) e `- [ ] texto`
 vira um item de checkbox (renderizado com glyph `☐`/`☑` no editor, salvo
-como `[ ]`/`[x]` em disco).
+como `[ ]`/`[x]` em disco). A fonte do editor é monoespaçada (estilo
+terminal, com fallback `Cascadia Mono`/`Consolas`/`Menlo`/`Monospace`
+conforme a plataforma) e é configurável — família e tamanho — na tela de
+Configurações, junto com uma prévia ao vivo.
 
 A tela de histórico (`Ctrl+Alt+H`) lista as notas (todas/ativas/concluídas),
 com ações pra reabrir ou concluir/reativar cada uma direto da lista.
@@ -56,6 +59,7 @@ cobre as permissões que cada SO exige (hotkey global, autostart).
   nota, com um cabeçalho `Chave: valor` e o conteúdo cru depois de um `---`.
 - Posição/tamanho da janela: `.../FMLab.QuickNote/window-placement.txt`.
 - Atalhos customizados: `.../FMLab.QuickNote/shortcuts.txt`.
+- Fonte do editor: `.../FMLab.QuickNote/font.txt`.
 
 Todos em texto simples, auditáveis/editáveis à mão se precisar.
 

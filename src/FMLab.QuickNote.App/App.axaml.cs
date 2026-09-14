@@ -50,6 +50,7 @@ public partial class App : Application
 
             _settingsWindow = new SettingsWindow();
             _settingsWindow.BindingsSaved += ReloadShortcutBindings;
+            _settingsWindow.FontSettingsSaved += ReloadFontSettings;
 
             SetupTrayIcon(desktop);
             _ = SetupGlobalHotkeyServiceAsync();
@@ -170,6 +171,16 @@ public partial class App : Application
         _globalHotkeyService?.Dispose();
         _globalHotkeyService = null;
         _ = SetupGlobalHotkeyServiceAsync();
+    }
+
+    /// <summary>
+    /// Reaplica a fonte salva na tela de configurações sem precisar reiniciar o processo:
+    /// atualiza o editor principal e a lista de histórico já abertos.
+    /// </summary>
+    private void ReloadFontSettings()
+    {
+        _noteWindow?.ApplyFontSettings();
+        _historyWindow?.ApplyFontSettings();
     }
 
     private static AppCommand ToAppCommand(ShortcutAction action) => action switch

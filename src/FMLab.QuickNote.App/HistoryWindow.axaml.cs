@@ -5,8 +5,10 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using FMLab.QuickNote.App.Fonts;
 using FMLab.QuickNote.App.Shortcuts;
 using FMLab.QuickNote.Core.Notes;
+using FMLab.QuickNote.Core.Settings;
 using FMLab.QuickNote.Core.Shortcuts;
 
 namespace FMLab.QuickNote.App;
@@ -19,6 +21,7 @@ namespace FMLab.QuickNote.App;
 public partial class HistoryWindow : Window
 {
     private readonly INoteRepository _noteRepository;
+    private readonly IFontSettingsStore _fontSettingsStore;
     private IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
 
     /// <summary>Disparado quando o usuário pede pra reabrir uma nota da lista no editor principal.</summary>
@@ -26,15 +29,22 @@ public partial class HistoryWindow : Window
 
     public HistoryWindow() : this(
         new FileNoteRepository(FileNoteRepository.GetDefaultDirectory()),
+        new FileFontSettingsStore(FileFontSettingsStore.GetDefaultPath()),
         ShortcutBindingsResolver.Resolve(new FileShortcutBindingsStore(FileShortcutBindingsStore.GetDefaultPath())))
     {
     }
 
-    public HistoryWindow(INoteRepository noteRepository, IReadOnlyDictionary<ShortcutAction, KeyCombo> bindings)
+    public HistoryWindow(
+        INoteRepository noteRepository,
+        IFontSettingsStore fontSettingsStore,
+        IReadOnlyDictionary<ShortcutAction, KeyCombo> bindings)
     {
         _noteRepository = noteRepository;
+        _fontSettingsStore = fontSettingsStore;
         _bindings = bindings;
         InitializeComponent();
+
+        ApplyFontSettings();
 
         FilterComboBox.SelectionChanged += (_, _) => Reload();
         KeyDown += OnKeyDown;
@@ -43,6 +53,17 @@ public partial class HistoryWindow : Window
 
     /// <summary>Aplica bindings recém-salvos na tela de configurações sem precisar reiniciar o processo.</summary>
     public void ApplyBindings(IReadOnlyDictionary<ShortcutAction, KeyCombo> bindings) => _bindings = bindings;
+
+    /// <summary>
+    /// Aplica a fonte salva (ou o fallback monoespaçado default) à lista de notas — o preview do
+    /// corpo (<see cref="NoteListItem.DisplayTitle"/>) herda a fonte/tamanho da <c>ListBox</c>.
+    /// </summary>
+    public void ApplyFontSettings()
+    {
+        var (fontFamily, fontSize) = FontSettingsResolver.Resolve(_fontSettingsStore);
+        NotesListBox.FontFamily = fontFamily;
+        NotesListBox.FontSize = fontSize;
+    }
 
     /// <summary>Recarrega a lista com os dados mais recentes e mostra a janela.</summary>
     public void ShowAndRefresh()

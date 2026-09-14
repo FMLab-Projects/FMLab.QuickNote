@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using FMLab.QuickNote.App.Fonts;
 using FMLab.QuickNote.App.Shortcuts;
 using FMLab.QuickNote.Core.Editor;
 using FMLab.QuickNote.Core.Notes;
@@ -29,12 +30,14 @@ public partial class NoteWindow : Window
     private static readonly TimeSpan AutosaveDebounce = TimeSpan.FromMilliseconds(1500);
 
     private readonly IWindowPlacementStore _placementStore;
+    private readonly IFontSettingsStore _fontSettingsStore;
     private readonly NoteEditingSession _session;
     private IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
     private readonly DispatcherTimer _autosaveTimer;
 
     public NoteWindow() : this(
         new FileWindowPlacementStore(FileWindowPlacementStore.GetDefaultPath()),
+        new FileFontSettingsStore(FileFontSettingsStore.GetDefaultPath()),
         new FileNoteRepository(FileNoteRepository.GetDefaultDirectory()),
         ShortcutBindingsResolver.Resolve(new FileShortcutBindingsStore(FileShortcutBindingsStore.GetDefaultPath())))
     {
@@ -42,15 +45,18 @@ public partial class NoteWindow : Window
 
     public NoteWindow(
         IWindowPlacementStore placementStore,
+        IFontSettingsStore fontSettingsStore,
         INoteRepository noteRepository,
         IReadOnlyDictionary<ShortcutAction, KeyCombo> bindings)
     {
         _placementStore = placementStore;
+        _fontSettingsStore = fontSettingsStore;
         _session = new NoteEditingSession(noteRepository);
         _bindings = bindings;
         InitializeComponent();
 
         ApplySavedPlacement();
+        ApplyFontSettings();
 
         // Foca o corpo ao mostrar a janela, mas sem roubar o foco do usuário se ele já estiver
         // editando o título (achado do teste manual da Fase 11: Activated também dispara numa
@@ -83,6 +89,16 @@ public partial class NoteWindow : Window
 
     /// <summary>Aplica bindings recém-salvos na tela de configurações sem precisar reiniciar o processo.</summary>
     public void ApplyBindings(IReadOnlyDictionary<ShortcutAction, KeyCombo> bindings) => _bindings = bindings;
+
+    /// <summary>Aplica a fonte salva (ou o fallback monoespaçado default) ao título e ao corpo.</summary>
+    public void ApplyFontSettings()
+    {
+        var (fontFamily, fontSize) = FontSettingsResolver.Resolve(_fontSettingsStore);
+        TitleTextBox.FontFamily = fontFamily;
+        TitleTextBox.FontSize = fontSize;
+        BodyTextBox.FontFamily = fontFamily;
+        BodyTextBox.FontSize = fontSize;
+    }
 
     private void RestartAutosaveTimer()
     {
