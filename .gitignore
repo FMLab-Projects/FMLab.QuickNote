@@ -42,6 +42,9 @@ ScaffoldingReadMe.txt
 # Notas de tarefas internas (não deve ser publicado)
 TASKS.md
 
+# Saída do publish.ps1/publish.sh (binários self-contained por RID)
+dist/
+
 # Others
 ~$*
 *~
