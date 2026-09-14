@@ -8,4 +8,13 @@
     <VersionSuffix>beta</VersionSuffix>
   </PropertyGroup>
 
+  <!-- Identidade do produto/empresa, aplicada a todos os projetos (metadados do
+       executável no Windows Explorer, tela de Sobre, pacotes etc). -->
+  <PropertyGroup>
+    <Product>FMLab.QuickNote</Product>
+    <Company>FMLab</Company>
+    <Authors>FMLab</Authors>
+    <Copyright>© $([System.DateTime]::Now.Year) FMLab</Copyright>
+  </PropertyGroup>
+
 </Project>
