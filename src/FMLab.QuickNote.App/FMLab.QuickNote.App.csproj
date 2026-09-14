@@ -8,6 +8,8 @@
     <!-- Ícone do executável no Windows (Explorer/taskbar). A bandeja carrega icon-256.png
          (embutido via AvaloniaResource abaixo) em App.axaml.cs. Fontes em assets/icons/. -->
     <ApplicationIcon>../../assets/icons/icon.ico</ApplicationIcon>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,5 +31,10 @@
 
   <ItemGroup>
     <AvaloniaResource Include="../../assets/icons/icon-256.png" Link="Assets/icon-256.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="**/*.pdb" />
+    <None Include="app.manifest" Link="app.manifest" />
   </ItemGroup>
 </Project>
