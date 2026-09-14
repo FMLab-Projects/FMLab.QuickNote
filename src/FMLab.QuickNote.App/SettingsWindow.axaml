@@ -5,7 +5,7 @@
         xmlns:app="clr-namespace:FMLab.QuickNote.App"
         mc:Ignorable="d" d:DesignWidth="440" d:DesignHeight="580"
         x:Class="FMLab.QuickNote.App.SettingsWindow"
-        Title="Configurações — FMLab.QuickNote"
+        Title="Configurações — Quick Note"
         Width="440" Height="580"
         MinWidth="360" MinHeight="420"
         CanResize="True"

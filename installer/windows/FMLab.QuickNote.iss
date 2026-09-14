@@ -7,7 +7,7 @@
 ;
 ; MyAppVersion pode ser omitido para builds locais (usa um valor default).
 
-#define MyAppName "FMLab.QuickNote"
+#define MyAppName "Quick Note"
 #ifndef MyAppVersion
   #define MyAppVersion "0.0.0-dev"
 #endif

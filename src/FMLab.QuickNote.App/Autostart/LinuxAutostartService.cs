@@ -49,7 +49,7 @@ public sealed class LinuxAutostartService : IAutostartService
         var content = string.Join('\n',
             "[Desktop Entry]",
             "Type=Application",
-            "Name=FMLab.QuickNote",
+            "Name=Quick Note",
             $"Exec=\"{exePath}\" --toggle",
             "X-GNOME-Autostart-enabled=true",
             "");
