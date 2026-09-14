@@ -8,15 +8,16 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
-using FMLab.QuickNote.App.Spikes;
+using FMLab.QuickNote.App.Shortcuts;
 using FMLab.QuickNote.Core.Ipc;
+using FMLab.QuickNote.Core.Shortcuts;
 
 namespace FMLab.QuickNote.App;
 
 public partial class App : Application
 {
     private NoteWindow? _noteWindow;
-    private GlobalHotkeySpikeService? _hotkeySpike;
+    private GlobalHotkeyService? _globalHotkeyService;
     private CommandPipeServer? _commandPipeServer;
 
     /// <summary>Set by <see cref="Program.Main"/> before startup; owned/disposed by this instance from here on.</summary>
@@ -43,7 +44,7 @@ public partial class App : Application
             desktop.MainWindow = _noteWindow;
 
             SetupTrayIcon(desktop);
-            _ = SetupGlobalHotkeySpikeAsync();
+            _ = SetupGlobalHotkeyServiceAsync();
             SetupCommandPipeServer();
 
             if (StartupCommand is { } startupCommand)
@@ -53,7 +54,7 @@ public partial class App : Application
 
             desktop.ShutdownRequested += (_, _) =>
             {
-                _hotkeySpike?.Dispose();
+                _globalHotkeyService?.Dispose();
                 _commandPipeServer?.Dispose();
                 InstanceLock?.Dispose();
             };
@@ -124,23 +125,32 @@ public partial class App : Application
         TrayIcon.SetIcons(this, [trayIcon]);
     }
 
-    private async System.Threading.Tasks.Task SetupGlobalHotkeySpikeAsync()
+    private async System.Threading.Tasks.Task SetupGlobalHotkeyServiceAsync()
     {
-        _hotkeySpike = new GlobalHotkeySpikeService();
-        // SharpHook despacha os eventos em uma thread da pool; qualquer acesso a
-        // objetos de UI precisa ser marshalled de volta pro Dispatcher (achado do spike).
-        _hotkeySpike.NewNoteRequested += () =>
-            Dispatcher.UIThread.Post(() => HandleCommand(AppCommand.NewNote));
-        _hotkeySpike.EditDraftRequested += () =>
-            Dispatcher.UIThread.Post(() => HandleCommand(AppCommand.EditDraft));
+        var bindings = ShortcutBindingsResolver.Resolve(
+            new FileShortcutBindingsStore(FileShortcutBindingsStore.GetDefaultPath()));
 
-        var started = await _hotkeySpike.TryStartAsync();
+        _globalHotkeyService = new GlobalHotkeyService(bindings);
+        // SharpHook despacha os eventos em uma thread da pool; qualquer acesso a
+        // objetos de UI precisa ser marshalled de volta pro Dispatcher (achado do spike da Fase 1).
+        _globalHotkeyService.ActionRequested += action =>
+            Dispatcher.UIThread.Post(() => HandleCommand(ToAppCommand(action)));
+
+        var started = await _globalHotkeyService.TryStartAsync();
         if (!started)
         {
             Console.WriteLine(
-                "[GlobalHotkeySpike] Hotkey global indisponível nesta sessão; use o ícone da bandeja.");
+                "[GlobalHotkeyService] Hotkey global indisponível nesta sessão; use o ícone da bandeja.");
         }
     }
+
+    private static AppCommand ToAppCommand(ShortcutAction action) => action switch
+    {
+        ShortcutAction.NewNote => AppCommand.NewNote,
+        ShortcutAction.EditDraft => AppCommand.EditDraft,
+        ShortcutAction.OpenHistory => AppCommand.OpenHistory,
+        _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ação não é um atalho global."),
+    };
 
     // Gera o ícone da bandeja em runtime (sem depender de um asset .ico externo); um
     // ícone real por plataforma entra na Fase 10.
