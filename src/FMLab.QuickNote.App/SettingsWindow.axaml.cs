@@ -121,7 +121,7 @@ public partial class SettingsWindow : Window
                 return;
             }
 
-            _workingBindings[action] = new KeyCombo(ShortcutMatcher.ToShortcutModifiers(e.KeyModifiers), e.Key.ToString());
+            _workingBindings[action] = new KeyCombo(ShortcutMatcher.ToShortcutModifiers(e.KeyModifiers), ShortcutMatcher.NormalizeKeyName(e.Key));
             _capturingAction = null;
             RefreshRows();
             return;
