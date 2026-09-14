@@ -66,6 +66,9 @@ jobs:
             -p:IncludeNativeLibrariesForSelfExtract=true \
             --output "dist/${{ matrix.rid }}"
 
+      - name: Remove debug symbols
+        run: find "dist/${{ matrix.rid }}" -name '*.pdb' -delete
+
       - name: Zip package
         run: |
           cd "dist/${{ matrix.rid }}"
