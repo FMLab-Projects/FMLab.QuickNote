@@ -18,6 +18,7 @@ public partial class App : Application
 {
     private NoteWindow? _noteWindow;
     private HistoryWindow? _historyWindow;
+    private SettingsWindow? _settingsWindow;
     private GlobalHotkeyService? _globalHotkeyService;
     private CommandPipeServer? _commandPipeServer;
 
@@ -46,6 +47,9 @@ public partial class App : Application
 
             _historyWindow = new HistoryWindow();
             _historyWindow.NoteReopenRequested += note => _noteWindow?.OpenNoteForEditing(note);
+
+            _settingsWindow = new SettingsWindow();
+            _settingsWindow.BindingsSaved += ReloadShortcutBindings;
 
             SetupTrayIcon(desktop);
             _ = SetupGlobalHotkeyServiceAsync();
@@ -114,12 +118,16 @@ public partial class App : Application
         var openHistoryItem = new NativeMenuItem("Histórico");
         openHistoryItem.Click += (_, _) => HandleCommand(AppCommand.OpenHistory);
 
+        var settingsItem = new NativeMenuItem("Configurações");
+        settingsItem.Click += (_, _) => _settingsWindow?.ShowAndRefresh();
+
         var exitItem = new NativeMenuItem("Sair");
         exitItem.Click += (_, _) => desktop.Shutdown();
 
         trayIcon.Menu.Items.Add(newNoteItem);
         trayIcon.Menu.Items.Add(editDraftItem);
         trayIcon.Menu.Items.Add(openHistoryItem);
+        trayIcon.Menu.Items.Add(settingsItem);
         trayIcon.Menu.Items.Add(new NativeMenuItemSeparator());
         trayIcon.Menu.Items.Add(exitItem);
 
@@ -145,6 +153,23 @@ public partial class App : Application
             Console.WriteLine(
                 "[GlobalHotkeyService] Hotkey global indisponível nesta sessão; use o ícone da bandeja.");
         }
+    }
+
+    /// <summary>
+    /// Reaplica os bindings salvos na tela de configurações sem precisar reiniciar o processo:
+    /// atualiza as janelas já abertas e reinicia o hook global com os novos atalhos.
+    /// </summary>
+    private void ReloadShortcutBindings()
+    {
+        var bindings = ShortcutBindingsResolver.Resolve(
+            new FileShortcutBindingsStore(FileShortcutBindingsStore.GetDefaultPath()));
+
+        _noteWindow?.ApplyBindings(bindings);
+        _historyWindow?.ApplyBindings(bindings);
+
+        _globalHotkeyService?.Dispose();
+        _globalHotkeyService = null;
+        _ = SetupGlobalHotkeyServiceAsync();
     }
 
     private static AppCommand ToAppCommand(ShortcutAction action) => action switch
