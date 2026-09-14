@@ -15,4 +15,7 @@ public sealed class Note
     public DateTimeOffset? CompletedAt { get; set; }
 
     public bool IsActive => CompletedAt is null;
+
+    /// <summary>Ordenados por <see cref="Comment.CreatedAt"/> ascendente.</summary>
+    public IReadOnlyList<Comment> Comments { get; set; } = [];
 }

@@ -159,6 +159,124 @@ public sealed class FileNoteRepositoryTests : IDisposable
         Assert.Throws<InvalidOperationException>(() => repository.Reactivate(Guid.NewGuid()));
     }
 
+    [Fact]
+    public void New_note_round_trips_with_zero_comments()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+
+        Assert.Empty(repository.GetById(note.Id)!.Comments);
+    }
+
+    [Fact]
+    public void AddComment_persists_and_round_trips_a_single_comment()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+
+        _now = _now.AddMinutes(1);
+        repository.AddComment(note.Id, "primeiro comentário");
+
+        var loaded = repository.GetById(note.Id)!;
+        Assert.Single(loaded.Comments);
+        Assert.Equal("primeiro comentário", loaded.Comments[0].Text);
+        Assert.Equal(_now, loaded.Comments[0].CreatedAt);
+    }
+
+    [Fact]
+    public void AddComment_trims_surrounding_whitespace()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+
+        repository.AddComment(note.Id, "  com espaços  ");
+
+        Assert.Equal("com espaços", repository.GetById(note.Id)!.Comments[0].Text);
+    }
+
+    [Fact]
+    public void AddComment_round_trips_several_comments_ordered_by_created_at()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+
+        repository.AddComment(note.Id, "primeiro");
+        _now = _now.AddMinutes(1);
+        repository.AddComment(note.Id, "segundo");
+        _now = _now.AddMinutes(1);
+        repository.AddComment(note.Id, "terceiro");
+
+        var loaded = repository.GetById(note.Id)!;
+        Assert.Equal(["primeiro", "segundo", "terceiro"], loaded.Comments.Select(c => c.Text));
+        Assert.True(loaded.Comments[0].CreatedAt < loaded.Comments[1].CreatedAt);
+        Assert.True(loaded.Comments[1].CreatedAt < loaded.Comments[2].CreatedAt);
+    }
+
+    [Fact]
+    public void AddComment_updates_note_updated_at()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+
+        _now = _now.AddMinutes(1);
+        repository.AddComment(note.Id, "comentário");
+
+        Assert.Equal(_now, repository.GetById(note.Id)!.UpdatedAt);
+    }
+
+    [Fact]
+    public void AddComment_throws_when_note_does_not_exist()
+    {
+        var repository = CreateRepository();
+
+        Assert.Throws<InvalidOperationException>(() => repository.AddComment(Guid.NewGuid(), "x"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void AddComment_rejects_empty_or_whitespace_only_text(string text)
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+
+        Assert.Throws<ArgumentException>(() => repository.AddComment(note.Id, text));
+        Assert.Empty(repository.GetById(note.Id)!.Comments);
+    }
+
+    [Fact]
+    public void AddComment_rejects_text_with_line_break()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+
+        Assert.Throws<ArgumentException>(() => repository.AddComment(note.Id, "linha um\nlinha dois"));
+        Assert.Empty(repository.GetById(note.Id)!.Comments);
+    }
+
+    [Fact]
+    public void AddComment_rejects_text_above_max_length()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+        var tooLong = new string('x', Comment.MaxLength + 1);
+
+        Assert.Throws<ArgumentException>(() => repository.AddComment(note.Id, tooLong));
+        Assert.Empty(repository.GetById(note.Id)!.Comments);
+    }
+
+    [Fact]
+    public void AddComment_accepts_text_at_exactly_max_length()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+        var exact = new string('x', Comment.MaxLength);
+
+        repository.AddComment(note.Id, exact);
+
+        Assert.Equal(exact, repository.GetById(note.Id)!.Comments[0].Text);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))

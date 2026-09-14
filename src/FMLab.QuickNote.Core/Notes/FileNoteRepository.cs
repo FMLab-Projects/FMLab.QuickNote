@@ -73,6 +73,31 @@ public sealed class FileNoteRepository : INoteRepository
         Update(note);
     }
 
+    public void AddComment(Guid noteId, string text)
+    {
+        var trimmed = (text ?? string.Empty).Trim();
+
+        if (trimmed.Length == 0)
+        {
+            throw new ArgumentException("O comentário não pode ficar vazio.", nameof(text));
+        }
+
+        if (trimmed.Contains('\n') || trimmed.Contains('\r'))
+        {
+            throw new ArgumentException("O comentário não pode ter quebras de linha.", nameof(text));
+        }
+
+        if (trimmed.Length > Comment.MaxLength)
+        {
+            throw new ArgumentException(
+                $"O comentário não pode passar de {Comment.MaxLength} caracteres.", nameof(text));
+        }
+
+        var note = GetById(noteId) ?? throw new InvalidOperationException($"Note '{noteId}' not found.");
+        note.Comments = [.. note.Comments, new Comment(_clock(), trimmed)];
+        Update(note);
+    }
+
     private IEnumerable<Note> EnumerateNotes()
     {
         foreach (var path in Directory.EnumerateFiles(_directory, $"*{Extension}"))
@@ -96,6 +121,10 @@ public sealed class FileNoteRepository : INoteRepository
         builder.Append("CreatedAt: ").Append(Format(note.CreatedAt)).Append('\n');
         builder.Append("UpdatedAt: ").Append(Format(note.UpdatedAt)).Append('\n');
         builder.Append("CompletedAt: ").Append(note.CompletedAt is { } c ? Format(c) : string.Empty).Append('\n');
+        foreach (var comment in note.Comments)
+        {
+            builder.Append("Comment: ").Append(Format(comment.CreatedAt)).Append('|').Append(comment.Text).Append('\n');
+        }
         builder.Append("---\n");
         builder.Append(note.Content);
         return builder.ToString();
@@ -112,9 +141,22 @@ public sealed class FileNoteRepository : INoteRepository
         var createdAtText = ReadHeaderValue(reader.ReadLine(), "CreatedAt: ");
         var updatedAtText = ReadHeaderValue(reader.ReadLine(), "UpdatedAt: ");
         var completedAtText = ReadHeaderValue(reader.ReadLine(), "CompletedAt: ");
-        var separator = reader.ReadLine();
 
-        if (separator != "---" || createdAtText is null || updatedAtText is null
+        // Zero ou mais linhas "Comment: <timestamp>|<texto>" repetíveis antes do separador —
+        // notas gravadas antes da Fase 15 simplesmente não têm nenhuma, e continuam válidas.
+        var comments = new List<Comment>();
+        string? line;
+        while ((line = reader.ReadLine()) is not null && line != "---")
+        {
+            if (!TryParseCommentLine(line, out var comment))
+            {
+                return false;
+            }
+
+            comments.Add(comment);
+        }
+
+        if (line != "---" || createdAtText is null || updatedAtText is null
             || !TryParseTimestamp(createdAtText, out var createdAt)
             || !TryParseTimestamp(updatedAtText, out var updatedAt))
         {
@@ -140,7 +182,28 @@ public sealed class FileNoteRepository : INoteRepository
             CreatedAt = createdAt,
             UpdatedAt = updatedAt,
             CompletedAt = completedAt,
+            Comments = comments.OrderBy(c => c.CreatedAt).ToList(),
         };
+        return true;
+    }
+
+    private static bool TryParseCommentLine(string line, out Comment comment)
+    {
+        comment = null!;
+        const string prefix = "Comment: ";
+        if (!line.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var value = line[prefix.Length..];
+        var separatorIndex = value.IndexOf('|');
+        if (separatorIndex < 0 || !TryParseTimestamp(value[..separatorIndex], out var createdAt))
+        {
+            return false;
+        }
+
+        comment = new Comment(createdAt, value[(separatorIndex + 1)..]);
         return true;
     }
 

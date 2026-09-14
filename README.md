@@ -49,6 +49,13 @@ campo de busca por aproximação (título + conteúdo, tolera acentuação
 diferente e pequenos erros de digitação) combinável com o filtro de
 status, e um footer com a contagem total de notas/ativas/concluídas.
 
+Cada nota também aceita comentários curtos (até 140 caracteres, sem
+formatação): a seção "Comentários" no rodapé da janela principal lista os
+já adicionados e tem um campo pra adicionar um novo (`Enter` envia). A
+nota precisa já existir pra receber um comentário — o app salva o que
+estiver no editor antes de gravar o comentário. A quantidade de
+comentários aparece no histórico junto com o status da nota.
+
 ## Publicando um binário standalone
 
 Veja [`docs/INSTALL.md`](docs/INSTALL.md): `publish.ps1`/`publish.sh` geram

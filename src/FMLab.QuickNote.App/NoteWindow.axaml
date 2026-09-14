@@ -26,6 +26,45 @@
                      FontWeight="SemiBold"
                      Margin="0,0,0,6"
                      PlaceholderText="Título (opcional)" />
+            <StackPanel x:Name="CommentsPanel" DockPanel.Dock="Bottom" Spacing="2" Margin="0,6,0,0">
+                <TextBlock Text="Comentários"
+                           Foreground="#888888"
+                           FontSize="10"
+                           FontWeight="SemiBold" />
+                <ScrollViewer MaxHeight="60" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="CommentsItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}"
+                                           Foreground="#CCCCCC"
+                                           FontSize="11"
+                                           TextWrapping="Wrap"
+                                           Margin="0,1" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox x:Name="CommentTextBox"
+                             Grid.Column="0"
+                             MaxLength="140"
+                             Background="Transparent"
+                             BorderThickness="0,1,0,0"
+                             BorderBrush="#3A3A3A"
+                             Foreground="White"
+                             FontSize="12"
+                             Padding="0,4"
+                             PlaceholderText="Adicionar comentário..."
+                             KeyDown="OnCommentTextBoxKeyDown" />
+                    <TextBlock x:Name="CommentCounterText"
+                               Grid.Column="1"
+                               Text="140"
+                               Foreground="#777777"
+                               FontSize="10"
+                               VerticalAlignment="Bottom"
+                               Margin="6,0,0,4" />
+                </Grid>
+            </StackPanel>
             <TextBox x:Name="BodyTextBox"
                      AcceptsReturn="True"
                      AcceptsTab="True"

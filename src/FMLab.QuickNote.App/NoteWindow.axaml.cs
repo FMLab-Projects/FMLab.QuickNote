@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -31,6 +32,7 @@ public partial class NoteWindow : Window
 
     private readonly IWindowPlacementStore _placementStore;
     private readonly IFontSettingsStore _fontSettingsStore;
+    private readonly INoteRepository _noteRepository;
     private readonly NoteEditingSession _session;
     private IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
     private readonly DispatcherTimer _autosaveTimer;
@@ -51,12 +53,14 @@ public partial class NoteWindow : Window
     {
         _placementStore = placementStore;
         _fontSettingsStore = fontSettingsStore;
+        _noteRepository = noteRepository;
         _session = new NoteEditingSession(noteRepository);
         _bindings = bindings;
         InitializeComponent();
 
         ApplySavedPlacement();
         ApplyFontSettings();
+        RefreshComments();
 
         // Foca o corpo ao mostrar a janela, mas sem roubar o foco do usuário se ele já estiver
         // editando o título (achado do teste manual da Fase 11: Activated também dispara numa
@@ -85,6 +89,8 @@ public partial class NoteWindow : Window
         };
         TitleTextBox.TextChanged += (_, _) => RestartAutosaveTimer();
         BodyTextBox.TextChanged += (_, _) => RestartAutosaveTimer();
+
+        CommentTextBox.TextChanged += (_, _) => UpdateCommentCounter();
     }
 
     /// <summary>Aplica bindings recém-salvos na tela de configurações sem precisar reiniciar o processo.</summary>
@@ -289,11 +295,61 @@ public partial class NoteWindow : Window
     {
         TitleTextBox.Text = string.Empty;
         BodyTextBox.Text = string.Empty;
+        RefreshComments();
     }
 
     private void LoadNoteIntoEditor(Note note)
     {
         TitleTextBox.Text = note.Title ?? string.Empty;
         BodyTextBox.Text = StructuredTextEditor.ToDisplayText(note.Content);
+        RefreshComments();
+    }
+
+    /// <summary>Recarrega a lista de comentários da nota atual (ou vazia, se ainda não salva) e limpa o campo de entrada.</summary>
+    private void RefreshComments()
+    {
+        var note = _session.CurrentNoteId is { } id ? _noteRepository.GetById(id) : null;
+        CommentsItemsControl.ItemsSource = (note?.Comments ?? [])
+            .Select(c => $"{c.CreatedAt.LocalDateTime:dd/MM HH:mm} — {c.Text}")
+            .ToList();
+
+        CommentTextBox.Text = string.Empty;
+        UpdateCommentCounter();
+    }
+
+    private void UpdateCommentCounter() =>
+        CommentCounterText.Text = (Comment.MaxLength - (CommentTextBox.Text?.Length ?? 0)).ToString();
+
+    private void OnCommentTextBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Enter or Key.Return && e.KeyModifiers == KeyModifiers.None)
+        {
+            SubmitComment();
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Adiciona o texto do campo como comentário da nota atual. A nota precisa existir (ser
+    /// salva) antes de receber um comentário, então salva o que estiver no editor primeiro; se
+    /// título e corpo estiverem vazios (nada pra salvar), não há nota pra comentar e o campo é
+    /// ignorado.
+    /// </summary>
+    private void SubmitComment()
+    {
+        var text = CommentTextBox.Text;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        SaveCurrentNote();
+        if (_session.CurrentNoteId is not { } id)
+        {
+            return;
+        }
+
+        _noteRepository.AddComment(id, text);
+        RefreshComments();
     }
 }
