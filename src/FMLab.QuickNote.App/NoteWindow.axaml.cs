@@ -29,7 +29,7 @@ public partial class NoteWindow : Window
 
     private readonly IWindowPlacementStore _placementStore;
     private readonly NoteEditingSession _session;
-    private readonly IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
+    private IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
     private readonly DispatcherTimer _autosaveTimer;
 
     public NoteWindow() : this(
@@ -71,6 +71,9 @@ public partial class NoteWindow : Window
         TitleTextBox.TextChanged += (_, _) => RestartAutosaveTimer();
         BodyTextBox.TextChanged += (_, _) => RestartAutosaveTimer();
     }
+
+    /// <summary>Aplica bindings recém-salvos na tela de configurações sem precisar reiniciar o processo.</summary>
+    public void ApplyBindings(IReadOnlyDictionary<ShortcutAction, KeyCombo> bindings) => _bindings = bindings;
 
     private void RestartAutosaveTimer()
     {

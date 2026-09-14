@@ -19,7 +19,7 @@ namespace FMLab.QuickNote.App;
 public partial class HistoryWindow : Window
 {
     private readonly INoteRepository _noteRepository;
-    private readonly IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
+    private IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
 
     /// <summary>Disparado quando o usuário pede pra reabrir uma nota da lista no editor principal.</summary>
     public event Action<Note>? NoteReopenRequested;
@@ -40,6 +40,9 @@ public partial class HistoryWindow : Window
         KeyDown += OnKeyDown;
         Closing += OnClosing;
     }
+
+    /// <summary>Aplica bindings recém-salvos na tela de configurações sem precisar reiniciar o processo.</summary>
+    public void ApplyBindings(IReadOnlyDictionary<ShortcutAction, KeyCombo> bindings) => _bindings = bindings;
 
     /// <summary>Recarrega a lista com os dados mais recentes e mostra a janela.</summary>
     public void ShowAndRefresh()
