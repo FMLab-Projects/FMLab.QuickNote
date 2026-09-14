@@ -15,6 +15,11 @@ public sealed class ShortcutRow(ShortcutAction action, string comboText)
 
     public string ConflictMessage => "Conflito com outro atalho";
 
+    /// <summary>True para atalhos globais (funcionam com a janela escondida, ver <see cref="ShortcutDefaults.IsGlobal"/>).</summary>
+    public bool IsGlobal { get; init; }
+
+    public string ScopeLabel => IsGlobal ? "Global" : "Nesta janela";
+
     private static string Describe(ShortcutAction action) => action switch
     {
         ShortcutAction.NewNote => "Nova nota",

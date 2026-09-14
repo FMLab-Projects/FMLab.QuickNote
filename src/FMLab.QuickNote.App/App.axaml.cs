@@ -17,6 +17,7 @@ public partial class App : Application
     private NoteWindow? _noteWindow;
     private HistoryWindow? _historyWindow;
     private SettingsWindow? _settingsWindow;
+    private HelpWindow? _helpWindow;
     private AboutWindow? _aboutWindow;
     private GlobalHotkeyService? _globalHotkeyService;
     private CommandPipeServer? _commandPipeServer;
@@ -50,6 +51,8 @@ public partial class App : Application
             _settingsWindow = new SettingsWindow();
             _settingsWindow.BindingsSaved += ReloadShortcutBindings;
             _settingsWindow.FontSettingsSaved += ReloadFontSettings;
+
+            _helpWindow = new HelpWindow();
 
             _aboutWindow = new AboutWindow();
 
@@ -123,6 +126,9 @@ public partial class App : Application
         var settingsItem = new NativeMenuItem("Configurações");
         settingsItem.Click += (_, _) => _settingsWindow?.ShowAndRefresh();
 
+        var helpItem = new NativeMenuItem("Atalhos de teclado");
+        helpItem.Click += (_, _) => _helpWindow?.ShowAndRefresh();
+
         var aboutItem = new NativeMenuItem("Sobre");
         aboutItem.Click += (_, _) => _aboutWindow?.ShowAndActivate();
 
@@ -133,6 +139,7 @@ public partial class App : Application
         trayIcon.Menu.Items.Add(editDraftItem);
         trayIcon.Menu.Items.Add(openHistoryItem);
         trayIcon.Menu.Items.Add(settingsItem);
+        trayIcon.Menu.Items.Add(helpItem);
         trayIcon.Menu.Items.Add(new NativeMenuItemSeparator());
         trayIcon.Menu.Items.Add(aboutItem);
         trayIcon.Menu.Items.Add(new NativeMenuItemSeparator());
@@ -173,6 +180,7 @@ public partial class App : Application
 
         _noteWindow?.ApplyBindings(bindings);
         _historyWindow?.ApplyBindings(bindings);
+        _helpWindow?.ApplyBindings(bindings);
 
         _globalHotkeyService?.Dispose();
         _globalHotkeyService = null;
