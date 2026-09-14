@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FMLab.QuickNote.App/FMLab.QuickNote.App.csproj" />
+    <Project Path="src/FMLab.QuickNote.Core/FMLab.QuickNote.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FMLab.QuickNote.Tests/FMLab.QuickNote.Tests.csproj" />
+  </Folder>
+</Solution>
