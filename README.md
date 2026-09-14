@@ -14,6 +14,12 @@ dotnet run --project src/FMLab.QuickNote.App
 
 Ou use `build.ps1` (Windows) / `build.sh` (Linux/macOS) para build + testes.
 
+## Publicando um binário standalone
+
+Veja [`docs/INSTALL.md`](docs/INSTALL.md): `publish.ps1`/`publish.sh` geram
+um executável self-contained (arquivo único) por plataforma, e o documento
+cobre as permissões que cada SO exige (hotkey global, autostart).
+
 ## Decisões de arquitetura (ADRs)
 
 - [`docs/adr/0001-hotkey-global-linux.md`](docs/adr/0001-hotkey-global-linux.md) —

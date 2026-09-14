@@ -5,6 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Ícone do executável no Windows (Explorer/taskbar); a bandeja usa o ícone gerado em
+         runtime em App.axaml.cs. Fontes em assets/icons/ (ver Fase 10 do TASKS.md). -->
+    <ApplicationIcon>../../assets/icons/icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
