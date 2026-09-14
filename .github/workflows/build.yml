@@ -77,9 +77,49 @@ jobs:
           path: FMLab.QuickNote-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip
           retention-days: 30
 
+  installer:
+    name: Windows installer
+    needs: package
+    if: github.event_name != 'pull_request'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve app version
+        id: version
+        shell: bash
+        run: |
+          prefix=$(grep -oP '(?<=<VersionPrefix>)[^<]+' Directory.Build.props)
+          suffix=$(grep -oP '(?<=<VersionSuffix>)[^<]+' Directory.Build.props)
+          version="$prefix-$suffix"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: FMLab.QuickNote-${{ steps.version.outputs.version }}-win-x64
+          path: dist-download
+
+      - name: Extract published package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/win-x64 | Out-Null
+          Expand-Archive -Path "dist-download/FMLab.QuickNote-${{ steps.version.outputs.version }}-win-x64.zip" -DestinationPath dist/win-x64 -Force
+
+      - name: Build installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: installer/windows/FMLab.QuickNote.iss
+          options: /DMyAppVersion="${{ steps.version.outputs.version }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FMLab.QuickNote-${{ steps.version.outputs.version }}-win-x64-Setup
+          path: dist-installer/*.exe
+          retention-days: 30
+
   release:
     name: Publish release
-    needs: package
+    needs: [package, installer]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -108,9 +148,9 @@ jobs:
         run: |
           tag="${{ steps.version.outputs.tag }}"
           if gh release view "$tag" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            gh release upload "$tag" dist-artifacts/*.zip --repo "${{ github.repository }}" --clobber
+            gh release upload "$tag" dist-artifacts/*.zip dist-artifacts/*.exe --repo "${{ github.repository }}" --clobber
           else
-            gh release create "$tag" dist-artifacts/*.zip \
+            gh release create "$tag" dist-artifacts/*.zip dist-artifacts/*.exe \
               --repo "${{ github.repository }}" \
               --title "$tag" \
               --notes "Build automático a partir do commit ${{ github.sha }}." \

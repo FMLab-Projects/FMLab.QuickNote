@@ -22,6 +22,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+.vs/
 
 # .NET Core
 project.lock.json
@@ -44,6 +45,9 @@ TASKS.md
 
 # Saída do publish.ps1/publish.sh (binários self-contained por RID)
 dist/
+
+# Saída do instalador Windows (Inno Setup)
+dist-installer/
 
 # Others
 ~$*
