@@ -9,6 +9,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using FMLab.QuickNote.App.Spikes;
+using FMLab.QuickNote.Core.Ipc;
 
 namespace FMLab.QuickNote.App;
 
@@ -16,6 +17,13 @@ public partial class App : Application
 {
     private MainWindow? _mainWindow;
     private GlobalHotkeySpikeService? _hotkeySpike;
+    private CommandPipeServer? _commandPipeServer;
+
+    /// <summary>Set by <see cref="Program.Main"/> before startup; owned/disposed by this instance from here on.</summary>
+    public static SingleInstanceLock? InstanceLock { get; set; }
+
+    /// <summary>Command this process was launched with (CLI flag), applied once the window exists.</summary>
+    public static AppCommand? StartupCommand { get; set; }
 
     public override void Initialize()
     {
@@ -36,11 +44,52 @@ public partial class App : Application
 
             SetupTrayIconSpike(desktop);
             _ = SetupGlobalHotkeySpikeAsync();
+            SetupCommandPipeServer();
 
-            desktop.ShutdownRequested += (_, _) => _hotkeySpike?.Dispose();
+            if (StartupCommand is { } startupCommand)
+            {
+                HandleCommand(startupCommand);
+            }
+
+            desktop.ShutdownRequested += (_, _) =>
+            {
+                _hotkeySpike?.Dispose();
+                _commandPipeServer?.Dispose();
+                InstanceLock?.Dispose();
+            };
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private void SetupCommandPipeServer()
+    {
+        _commandPipeServer = new CommandPipeServer(IpcDefaults.PipeName);
+        // Assim como o hook global (ver GlobalHotkeySpikeService), o servidor do pipe despacha
+        // em thread própria; qualquer toque em UI precisa passar pelo Dispatcher.
+        _commandPipeServer.CommandReceived += command =>
+            Dispatcher.UIThread.Post(() => HandleCommand(command));
+        _commandPipeServer.Start();
+    }
+
+    private void HandleCommand(AppCommand command)
+    {
+        switch (command)
+        {
+            case AppCommand.NewNote:
+            case AppCommand.EditDraft:
+                // Fluxo real de "nova nota" vs. "editar rascunho" chega na Fase 6; por ora
+                // ambos só trazem a janela à frente, igual ao spike de hotkey da Fase 1.
+                _mainWindow?.ShowAndFocus();
+                break;
+            case AppCommand.OpenHistory:
+                // Tela de histórico ainda não existe (Fase 8); por ora só traz a janela à frente.
+                _mainWindow?.ShowAndFocus();
+                break;
+            case AppCommand.Toggle:
+                _mainWindow?.ToggleVisibility();
+                break;
+        }
     }
 
     private void SetupTrayIconSpike(IClassicDesktopStyleApplicationLifetime desktop)
