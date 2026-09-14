@@ -110,7 +110,7 @@ public partial class App : Application
         var trayIcon = new TrayIcon
         {
             Icon = CreateIcon(),
-            ToolTipText = "FMLab.QuickNote",
+            ToolTipText = "Quick Note",
             Menu = new NativeMenu()
         };
 

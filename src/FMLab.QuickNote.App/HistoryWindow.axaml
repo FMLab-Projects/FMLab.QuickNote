@@ -5,7 +5,7 @@
         xmlns:app="clr-namespace:FMLab.QuickNote.App"
         mc:Ignorable="d" d:DesignWidth="420" d:DesignHeight="520"
         x:Class="FMLab.QuickNote.App.HistoryWindow"
-        Title="Histórico — FMLab.QuickNote"
+        Title="Histórico — Quick Note"
         Width="420" Height="520"
         MinWidth="320" MinHeight="300"
         CanResize="True"

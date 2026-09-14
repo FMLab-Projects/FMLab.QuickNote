@@ -22,7 +22,7 @@ public partial class AboutWindow : Window
         AppIcon.Source = new Bitmap(AssetLoader.Open(new Uri("avares://FMLab.QuickNote.App/Assets/icon-256.png")));
 
         var assembly = Assembly.GetExecutingAssembly();
-        var product = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "FMLab.QuickNote";
+        var product = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "Quick Note";
         var company = assembly.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company ?? "FMLab";
         var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
         // O SourceLink embute o hash do commit após o "+" (ex: "0.1.0-beta+e131b78...");

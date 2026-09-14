@@ -5,7 +5,7 @@
         mc:Ignorable="d" d:DesignWidth="380" d:DesignHeight="480"
         x:Class="FMLab.QuickNote.App.NoteWindow"
         x:Name="Root"
-        Title="FMLab.QuickNote"
+        Title="Quick Note"
         Width="380" Height="480"
         MinWidth="260" MinHeight="180"
         CanResize="True"

@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="280"
         x:Class="FMLab.QuickNote.App.AboutWindow"
-        Title="Sobre — FMLab.QuickNote"
+        Title="Sobre — Quick Note"
         Width="320" Height="280"
         CanResize="False"
         WindowStartupLocation="CenterScreen"
@@ -23,7 +23,7 @@
                        Width="64" Height="64"
                        Margin="0,0,0,8" />
                 <TextBlock x:Name="AppNameText"
-                           Text="FMLab.QuickNote"
+                           Text="Quick Note"
                            Foreground="White"
                            FontSize="16"
                            FontWeight="Bold"
