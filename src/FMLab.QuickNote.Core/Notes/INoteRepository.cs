@@ -18,4 +18,11 @@ public interface INoteRepository
 
     /// <summary>Reverte uma nota concluída de volta para ativa (limpa <see cref="Note.CompletedAt"/>).</summary>
     void Reactivate(Guid id);
+
+    /// <summary>
+    /// Adiciona um comentário à nota. Valida <paramref name="text"/> (não vazio depois de
+    /// aparado, sem quebra de linha, até <see cref="Comment.MaxLength"/> caracteres) antes de
+    /// gravar; lança <see cref="ArgumentException"/> se a validação falhar.
+    /// </summary>
+    void AddComment(Guid noteId, string text);
 }

@@ -9,9 +9,11 @@ public sealed class NoteListItem(Note note)
 
     public string DisplayTitle => NoteDisplay.GetDisplayTitle(Note);
 
-    public string StatusLine => Note.IsActive
-        ? $"Ativa · atualizada em {Note.UpdatedAt.LocalDateTime:dd/MM/yyyy HH:mm}"
-        : $"Concluída · atualizada em {Note.UpdatedAt.LocalDateTime:dd/MM/yyyy HH:mm}";
+    public string StatusLine =>
+        (Note.IsActive
+            ? $"Ativa · atualizada em {Note.UpdatedAt.LocalDateTime:dd/MM/yyyy HH:mm}"
+            : $"Concluída · atualizada em {Note.UpdatedAt.LocalDateTime:dd/MM/yyyy HH:mm}")
+        + (Note.Comments.Count > 0 ? $" · {Note.Comments.Count} comentários" : string.Empty);
 
     public string ToggleActionLabel => Note.IsActive ? "Concluir" : "Reativar";
 }
