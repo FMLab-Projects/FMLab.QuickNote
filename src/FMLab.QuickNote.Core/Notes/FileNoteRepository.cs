@@ -66,6 +66,13 @@ public sealed class FileNoteRepository : INoteRepository
         Update(note);
     }
 
+    public void Reactivate(Guid id)
+    {
+        var note = GetById(id) ?? throw new InvalidOperationException($"Note '{id}' not found.");
+        note.CompletedAt = null;
+        Update(note);
+    }
+
     private IEnumerable<Note> EnumerateNotes()
     {
         foreach (var path in Directory.EnumerateFiles(_directory, $"*{Extension}"))
