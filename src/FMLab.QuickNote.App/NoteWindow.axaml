@@ -28,6 +28,7 @@
                      PlaceholderText="Título (opcional)" />
             <TextBox x:Name="BodyTextBox"
                      AcceptsReturn="True"
+                     AcceptsTab="True"
                      TextWrapping="Wrap"
                      Background="Transparent"
                      BorderThickness="0"
