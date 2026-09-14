@@ -3,6 +3,7 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using FMLab.QuickNote.Core.Editor;
 using FMLab.QuickNote.Core.Settings;
 
 namespace FMLab.QuickNote.App;
@@ -32,6 +33,9 @@ public partial class NoteWindow : Window
 
         KeyDown += OnKeyDown;
         Closing += OnClosing;
+
+        BodyTextBox.KeyDown += OnBodyKeyDown;
+        BodyTextBox.PointerReleased += OnBodyPointerReleased;
     }
 
     private void ApplySavedPlacement()
@@ -68,6 +72,48 @@ public partial class NoteWindow : Window
             HideAndPersist();
             e.Handled = true;
         }
+    }
+
+    private void OnBodyKeyDown(object? sender, KeyEventArgs e)
+    {
+        var text = BodyTextBox.Text ?? string.Empty;
+        var selectionStart = BodyTextBox.SelectionStart;
+        var selectionEnd = BodyTextBox.SelectionEnd;
+
+        if (e.Key == Key.Tab)
+        {
+            ApplyEdit(e.KeyModifiers.HasFlag(KeyModifiers.Shift)
+                ? StructuredTextEditor.Outdent(text, selectionStart, selectionEnd)
+                : StructuredTextEditor.Indent(text, selectionStart, selectionEnd));
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None)
+        {
+            ApplyEdit(StructuredTextEditor.HandleEnter(text, selectionStart, selectionEnd));
+            e.Handled = true;
+        }
+        else if (e.Key == Key.C && e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        {
+            ApplyEdit(StructuredTextEditor.ToggleCheckboxOnLine(text, BodyTextBox.CaretIndex));
+            e.Handled = true;
+        }
+    }
+
+    private void OnBodyPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        var text = BodyTextBox.Text ?? string.Empty;
+        var result = StructuredTextEditor.ToggleCheckboxNearColumn(text, BodyTextBox.CaretIndex);
+        if (result.Text != text)
+        {
+            ApplyEdit(result);
+        }
+    }
+
+    private void ApplyEdit(EditResult result)
+    {
+        BodyTextBox.Text = result.Text;
+        BodyTextBox.SelectionStart = result.SelectionStart;
+        BodyTextBox.SelectionEnd = result.SelectionEnd;
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
