@@ -15,7 +15,7 @@ namespace FMLab.QuickNote.App;
 
 public partial class App : Application
 {
-    private MainWindow? _mainWindow;
+    private NoteWindow? _noteWindow;
     private GlobalHotkeySpikeService? _hotkeySpike;
     private CommandPipeServer? _commandPipeServer;
 
@@ -34,15 +34,15 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Fase 1 spike: o processo fica residente na bandeja; fechar a janela apenas
-            // esconde (ver MainWindow.OnClosing). O encerramento real só acontece pelo
-            // menu "Sair" da bandeja.
+            // O processo fica residente na bandeja; fechar a janela apenas esconde
+            // (ver NoteWindow.OnClosing). O encerramento real só acontece pelo menu
+            // "Sair" da bandeja.
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-            _mainWindow = new MainWindow();
-            desktop.MainWindow = _mainWindow;
+            _noteWindow = new NoteWindow();
+            desktop.MainWindow = _noteWindow;
 
-            SetupTrayIconSpike(desktop);
+            SetupTrayIcon(desktop);
             _ = SetupGlobalHotkeySpikeAsync();
             SetupCommandPipeServer();
 
@@ -79,43 +79,47 @@ public partial class App : Application
             case AppCommand.NewNote:
             case AppCommand.EditDraft:
                 // Fluxo real de "nova nota" vs. "editar rascunho" chega na Fase 6; por ora
-                // ambos só trazem a janela à frente, igual ao spike de hotkey da Fase 1.
-                _mainWindow?.ShowAndFocus();
+                // ambos só trazem a janela à frente.
+                _noteWindow?.ShowAndFocus();
                 break;
             case AppCommand.OpenHistory:
                 // Tela de histórico ainda não existe (Fase 8); por ora só traz a janela à frente.
-                _mainWindow?.ShowAndFocus();
+                _noteWindow?.ShowAndFocus();
                 break;
             case AppCommand.Toggle:
-                _mainWindow?.ToggleVisibility();
+                _noteWindow?.ToggleVisibility();
                 break;
         }
     }
 
-    private void SetupTrayIconSpike(IClassicDesktopStyleApplicationLifetime desktop)
+    private void SetupTrayIcon(IClassicDesktopStyleApplicationLifetime desktop)
     {
         var trayIcon = new TrayIcon
         {
-            Icon = CreateSpikeIcon(),
-            ToolTipText = "FMLab.QuickNote (spike Fase 1)",
+            Icon = CreateIcon(),
+            ToolTipText = "FMLab.QuickNote",
             Menu = new NativeMenu()
         };
 
-        var toggleItem = new NativeMenuItem("Mostrar/Ocultar janela");
-        toggleItem.Click += (_, _) => _mainWindow?.ToggleVisibility();
+        var newNoteItem = new NativeMenuItem("Nova nota");
+        newNoteItem.Click += (_, _) => HandleCommand(AppCommand.NewNote);
 
-        var newNoteItem = new NativeMenuItem("Nova nota (spike)");
-        newNoteItem.Click += (_, _) => _mainWindow?.ShowAndFocus();
+        var editDraftItem = new NativeMenuItem("Editar rascunho");
+        editDraftItem.Click += (_, _) => HandleCommand(AppCommand.EditDraft);
+
+        var openHistoryItem = new NativeMenuItem("Histórico");
+        openHistoryItem.Click += (_, _) => HandleCommand(AppCommand.OpenHistory);
 
         var exitItem = new NativeMenuItem("Sair");
         exitItem.Click += (_, _) => desktop.Shutdown();
 
-        trayIcon.Menu.Items.Add(toggleItem);
         trayIcon.Menu.Items.Add(newNoteItem);
+        trayIcon.Menu.Items.Add(editDraftItem);
+        trayIcon.Menu.Items.Add(openHistoryItem);
         trayIcon.Menu.Items.Add(new NativeMenuItemSeparator());
         trayIcon.Menu.Items.Add(exitItem);
 
-        trayIcon.Clicked += (_, _) => _mainWindow?.ToggleVisibility();
+        trayIcon.Clicked += (_, _) => _noteWindow?.ToggleVisibility();
 
         TrayIcon.SetIcons(this, [trayIcon]);
     }
@@ -126,9 +130,9 @@ public partial class App : Application
         // SharpHook despacha os eventos em uma thread da pool; qualquer acesso a
         // objetos de UI precisa ser marshalled de volta pro Dispatcher (achado do spike).
         _hotkeySpike.NewNoteRequested += () =>
-            Dispatcher.UIThread.Post(() => _mainWindow?.ShowAndFocus());
+            Dispatcher.UIThread.Post(() => HandleCommand(AppCommand.NewNote));
         _hotkeySpike.EditDraftRequested += () =>
-            Dispatcher.UIThread.Post(() => _mainWindow?.ToggleVisibility());
+            Dispatcher.UIThread.Post(() => HandleCommand(AppCommand.EditDraft));
 
         var started = await _hotkeySpike.TryStartAsync();
         if (!started)
@@ -138,9 +142,9 @@ public partial class App : Application
         }
     }
 
-    // Gera o ícone da bandeja em runtime (sem depender de um asset .ico externo)
-    // apenas para fins deste spike; um ícone real entra na Fase 10.
-    private static WindowIcon CreateSpikeIcon()
+    // Gera o ícone da bandeja em runtime (sem depender de um asset .ico externo); um
+    // ícone real por plataforma entra na Fase 10.
+    private static WindowIcon CreateIcon()
     {
         const int size = 32;
         var pixelSize = new PixelSize(size, size);
