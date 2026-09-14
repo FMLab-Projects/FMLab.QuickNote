@@ -17,6 +17,7 @@ namespace FMLab.QuickNote.App;
 public partial class App : Application
 {
     private NoteWindow? _noteWindow;
+    private HistoryWindow? _historyWindow;
     private GlobalHotkeyService? _globalHotkeyService;
     private CommandPipeServer? _commandPipeServer;
 
@@ -43,6 +44,9 @@ public partial class App : Application
             _noteWindow = new NoteWindow();
             desktop.MainWindow = _noteWindow;
 
+            _historyWindow = new HistoryWindow();
+            _historyWindow.NoteReopenRequested += note => _noteWindow?.OpenNoteForEditing(note);
+
             SetupTrayIcon(desktop);
             _ = SetupGlobalHotkeyServiceAsync();
             SetupCommandPipeServer();
@@ -66,7 +70,7 @@ public partial class App : Application
     private void SetupCommandPipeServer()
     {
         _commandPipeServer = new CommandPipeServer(IpcDefaults.PipeName);
-        // Assim como o hook global (ver GlobalHotkeySpikeService), o servidor do pipe despacha
+        // Assim como o hook global (ver GlobalHotkeyService), o servidor do pipe despacha
         // em thread própria; qualquer toque em UI precisa passar pelo Dispatcher.
         _commandPipeServer.CommandReceived += command =>
             Dispatcher.UIThread.Post(() => HandleCommand(command));
@@ -84,8 +88,7 @@ public partial class App : Application
                 _noteWindow?.ShowPreviousDraft();
                 break;
             case AppCommand.OpenHistory:
-                // Tela de histórico ainda não existe (Fase 8); por ora só traz a janela à frente.
-                _noteWindow?.ShowAndFocus();
+                _historyWindow?.ShowAndRefresh();
                 break;
             case AppCommand.Toggle:
                 _noteWindow?.ToggleVisibility();

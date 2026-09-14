@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
+using FMLab.QuickNote.App.Shortcuts;
 using FMLab.QuickNote.Core.Editor;
 using FMLab.QuickNote.Core.Notes;
 using FMLab.QuickNote.Core.Settings;
@@ -145,19 +146,7 @@ public partial class NoteWindow : Window
 
     /// <summary>Compara a tecla/modificadores pressionados com o binding configurado para a ação.</summary>
     private bool Matches(KeyEventArgs e, ShortcutAction action) =>
-        _bindings.TryGetValue(action, out var combo)
-        && string.Equals(e.Key.ToString(), combo.Key, StringComparison.OrdinalIgnoreCase)
-        && ToShortcutModifiers(e.KeyModifiers) == combo.Modifiers;
-
-    private static ShortcutModifiers ToShortcutModifiers(KeyModifiers modifiers)
-    {
-        var result = ShortcutModifiers.None;
-        if (modifiers.HasFlag(KeyModifiers.Control)) result |= ShortcutModifiers.Control;
-        if (modifiers.HasFlag(KeyModifiers.Alt)) result |= ShortcutModifiers.Alt;
-        if (modifiers.HasFlag(KeyModifiers.Shift)) result |= ShortcutModifiers.Shift;
-        if (modifiers.HasFlag(KeyModifiers.Meta)) result |= ShortcutModifiers.Meta;
-        return result;
-    }
+        _bindings.TryGetValue(action, out var combo) && ShortcutMatcher.Matches(e, combo);
 
     private void OnBodyPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
@@ -234,6 +223,15 @@ public partial class NoteWindow : Window
             ClearEditor();
         }
 
+        ShowAndFocus();
+    }
+
+    /// <summary>Salva a nota aberta (se houver algo digitado) e carrega a nota informada (ex.: reabrir a partir do histórico).</summary>
+    public void OpenNoteForEditing(Note note)
+    {
+        SaveCurrentNote();
+        _session.LoadNote(note);
+        LoadNoteIntoEditor(note);
         ShowAndFocus();
     }
 

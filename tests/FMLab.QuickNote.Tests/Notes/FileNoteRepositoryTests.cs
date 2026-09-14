@@ -135,6 +135,30 @@ public sealed class FileNoteRepositoryTests : IDisposable
         Assert.Equal(new[] { third.Id, second.Id, first.Id }, history.Select(n => n.Id));
     }
 
+    [Fact]
+    public void Reactivate_clears_completed_at_and_note_becomes_active_again()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+        repository.Complete(note.Id);
+
+        _now = _now.AddMinutes(1);
+        repository.Reactivate(note.Id);
+
+        var loaded = repository.GetById(note.Id)!;
+        Assert.Null(loaded.CompletedAt);
+        Assert.True(loaded.IsActive);
+        Assert.Equal(_now, loaded.UpdatedAt);
+    }
+
+    [Fact]
+    public void Reactivate_throws_when_note_does_not_exist()
+    {
+        var repository = CreateRepository();
+
+        Assert.Throws<InvalidOperationException>(() => repository.Reactivate(Guid.NewGuid()));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))

@@ -15,4 +15,7 @@ public interface INoteRepository
     IReadOnlyList<Note> GetHistory();
 
     void Complete(Guid id);
+
+    /// <summary>Reverte uma nota concluída de volta para ativa (limpa <see cref="Note.CompletedAt"/>).</summary>
+    void Reactivate(Guid id);
 }
