@@ -5,6 +5,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using FMLab.QuickNote.App.Fonts;
 using FMLab.QuickNote.App.Shortcuts;
 using FMLab.QuickNote.Core.Notes;
@@ -20,8 +21,11 @@ namespace FMLab.QuickNote.App;
 /// </summary>
 public partial class HistoryWindow : Window
 {
+    private static readonly TimeSpan SearchDebounce = TimeSpan.FromMilliseconds(250);
+
     private readonly INoteRepository _noteRepository;
     private readonly IFontSettingsStore _fontSettingsStore;
+    private readonly DispatcherTimer _searchDebounceTimer;
     private IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
 
     /// <summary>Disparado quando o usuário pede pra reabrir uma nota da lista no editor principal.</summary>
@@ -46,7 +50,19 @@ public partial class HistoryWindow : Window
 
         ApplyFontSettings();
 
+        _searchDebounceTimer = new DispatcherTimer { Interval = SearchDebounce };
+        _searchDebounceTimer.Tick += (_, _) =>
+        {
+            _searchDebounceTimer.Stop();
+            Reload();
+        };
+
         FilterComboBox.SelectionChanged += (_, _) => Reload();
+        SearchTextBox.TextChanged += (_, _) =>
+        {
+            _searchDebounceTimer.Stop();
+            _searchDebounceTimer.Start();
+        };
         KeyDown += OnKeyDown;
         Closing += OnClosing;
     }
@@ -83,10 +99,18 @@ public partial class HistoryWindow : Window
         };
 
         var allNotes = _noteRepository.GetHistory();
-        var notes = filter.Apply(allNotes);
+        var statusFiltered = filter.Apply(allNotes);
+
+        var query = SearchTextBox.Text;
+        var notes = string.IsNullOrWhiteSpace(query) ? statusFiltered : NoteSearch.Search(statusFiltered, query);
+
         NotesListBox.ItemsSource = notes.Select(n => new NoteListItem(n)).ToList();
         EmptyStateText.IsVisible = notes.Count == 0;
+        EmptyStateText.Text = statusFiltered.Count == 0
+            ? "Nenhuma nota encontrada."
+            : "Nenhum resultado para a busca.";
 
+        // Footer sempre reflete o total geral (Fase 13), independente de filtro/busca.
         FooterText.Text = HistoryStats.From(allNotes).ToString();
     }
 

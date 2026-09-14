@@ -44,7 +44,10 @@ conforme a plataforma) e é configurável — família e tamanho — na tela de
 Configurações, junto com uma prévia ao vivo.
 
 A tela de histórico (`Ctrl+Alt+H`) lista as notas (todas/ativas/concluídas),
-com ações pra reabrir ou concluir/reativar cada uma direto da lista.
+com ações pra reabrir ou concluir/reativar cada uma direto da lista, um
+campo de busca por aproximação (título + conteúdo, tolera acentuação
+diferente e pequenos erros de digitação) combinável com o filtro de
+status, e um footer com a contagem total de notas/ativas/concluídas.
 
 ## Publicando um binário standalone
 
