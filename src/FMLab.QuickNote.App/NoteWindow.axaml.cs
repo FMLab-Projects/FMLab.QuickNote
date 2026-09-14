@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
@@ -7,6 +8,7 @@ using Avalonia.Threading;
 using FMLab.QuickNote.Core.Editor;
 using FMLab.QuickNote.Core.Notes;
 using FMLab.QuickNote.Core.Settings;
+using FMLab.QuickNote.Core.Shortcuts;
 
 namespace FMLab.QuickNote.App;
 
@@ -16,7 +18,9 @@ namespace FMLab.QuickNote.App;
 /// tamanho são lembrados entre sessões via <see cref="IWindowPlacementStore"/>. O ciclo de vida
 /// da nota (criar/atualizar/concluir) é delegado à <see cref="NoteEditingSession"/>; esta classe
 /// só traduz os TextBox de/para texto puro (e o formato de exibição do checkbox — ver
-/// <see cref="StructuredTextEditor"/>).
+/// <see cref="StructuredTextEditor"/>). Os atalhos locais (fechar, concluir, alternar checkbox)
+/// usam os bindings resolvidos pela Fase 7 (<see cref="ShortcutBindingsResolver"/>); os globais
+/// (nova nota, editar rascunho, histórico) são tratados pelo <see cref="Shortcuts.GlobalHotkeyService"/> na <c>App</c>.
 /// </summary>
 public partial class NoteWindow : Window
 {
@@ -24,18 +28,24 @@ public partial class NoteWindow : Window
 
     private readonly IWindowPlacementStore _placementStore;
     private readonly NoteEditingSession _session;
+    private readonly IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
     private readonly DispatcherTimer _autosaveTimer;
 
     public NoteWindow() : this(
         new FileWindowPlacementStore(FileWindowPlacementStore.GetDefaultPath()),
-        new FileNoteRepository(FileNoteRepository.GetDefaultDirectory()))
+        new FileNoteRepository(FileNoteRepository.GetDefaultDirectory()),
+        ShortcutBindingsResolver.Resolve(new FileShortcutBindingsStore(FileShortcutBindingsStore.GetDefaultPath())))
     {
     }
 
-    public NoteWindow(IWindowPlacementStore placementStore, INoteRepository noteRepository)
+    public NoteWindow(
+        IWindowPlacementStore placementStore,
+        INoteRepository noteRepository,
+        IReadOnlyDictionary<ShortcutAction, KeyCombo> bindings)
     {
         _placementStore = placementStore;
         _session = new NoteEditingSession(noteRepository);
+        _bindings = bindings;
         InitializeComponent();
 
         ApplySavedPlacement();
@@ -96,7 +106,7 @@ public partial class NoteWindow : Window
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape)
+        if (Matches(e, ShortcutAction.Close))
         {
             HideAndPersist();
             e.Handled = true;
@@ -109,7 +119,7 @@ public partial class NoteWindow : Window
         var selectionStart = BodyTextBox.SelectionStart;
         var selectionEnd = BodyTextBox.SelectionEnd;
 
-        if (e.Key == Key.Enter && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        if (Matches(e, ShortcutAction.Complete))
         {
             CompleteCurrentNote();
             e.Handled = true;
@@ -126,11 +136,27 @@ public partial class NoteWindow : Window
             ApplyEdit(StructuredTextEditor.HandleEnter(text, selectionStart, selectionEnd));
             e.Handled = true;
         }
-        else if (e.Key == Key.C && e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        else if (Matches(e, ShortcutAction.ToggleCheckbox))
         {
             ApplyEdit(StructuredTextEditor.ToggleCheckboxOnLine(text, BodyTextBox.CaretIndex));
             e.Handled = true;
         }
+    }
+
+    /// <summary>Compara a tecla/modificadores pressionados com o binding configurado para a ação.</summary>
+    private bool Matches(KeyEventArgs e, ShortcutAction action) =>
+        _bindings.TryGetValue(action, out var combo)
+        && string.Equals(e.Key.ToString(), combo.Key, StringComparison.OrdinalIgnoreCase)
+        && ToShortcutModifiers(e.KeyModifiers) == combo.Modifiers;
+
+    private static ShortcutModifiers ToShortcutModifiers(KeyModifiers modifiers)
+    {
+        var result = ShortcutModifiers.None;
+        if (modifiers.HasFlag(KeyModifiers.Control)) result |= ShortcutModifiers.Control;
+        if (modifiers.HasFlag(KeyModifiers.Alt)) result |= ShortcutModifiers.Alt;
+        if (modifiers.HasFlag(KeyModifiers.Shift)) result |= ShortcutModifiers.Shift;
+        if (modifiers.HasFlag(KeyModifiers.Meta)) result |= ShortcutModifiers.Meta;
+        return result;
     }
 
     private void OnBodyPointerReleased(object? sender, PointerReleasedEventArgs e)

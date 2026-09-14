@@ -3,6 +3,12 @@
 Status: aceito
 Data: 2026-09-14
 
+> **Atualização (Fase 7)**: `Spikes/GlobalHotkeySpikeService.cs`, citado abaixo, foi
+> substituído por `Shortcuts/GlobalHotkeyService.cs` — mesma base (`SharpHook.TaskPoolGlobalHook`)
+> e o mesmo contrato de falha não-fatal descrito nesta ADR, mas lendo os bindings configuráveis
+> (`FMLab.QuickNote.Core.Shortcuts`) em vez de `Ctrl+Alt+N`/`Ctrl+Alt+Q` fixos no código. O
+> restante desta ADR (riscos de Linux/Wayland, plano B) continua valendo sem alteração.
+
 ## Contexto
 
 A Fase 0 (`TASKS.md`) registrou um risco conhecido a validar cedo: o hook
