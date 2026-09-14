@@ -39,6 +39,9 @@ ScaffoldingReadMe.txt
 # dotenv environment variables file
 .env
 
+# Notas de tarefas internas (não deve ser publicado)
+TASKS.md
+
 # Others
 ~$*
 *~
