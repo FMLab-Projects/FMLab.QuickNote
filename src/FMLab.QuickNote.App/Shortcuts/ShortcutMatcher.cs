@@ -7,8 +7,16 @@ namespace FMLab.QuickNote.App.Shortcuts;
 public static class ShortcutMatcher
 {
     public static bool Matches(KeyEventArgs e, KeyCombo combo) =>
-        string.Equals(e.Key.ToString(), combo.Key, System.StringComparison.OrdinalIgnoreCase)
+        string.Equals(NormalizeKeyName(e.Key), combo.Key, System.StringComparison.OrdinalIgnoreCase)
         && ToShortcutModifiers(e.KeyModifiers) == combo.Modifiers;
+
+    /// <summary>
+    /// Avalonia reporta a tecla Enter principal como <see cref="Key.Return"/> (achado do teste
+    /// manual da Fase 11 — "Concluir"/Ctrl+Enter nunca disparava porque o binding default usa
+    /// "Enter" e a comparação nunca batia). Normaliza pro nome usado em <c>ShortcutDefaults</c>
+    /// e na captura de tecla da tela de configurações, pra "Enter" e "Return" serem a mesma tecla.
+    /// </summary>
+    public static string NormalizeKeyName(Key key) => key == Key.Return ? "Enter" : key.ToString();
 
     public static ShortcutModifiers ToShortcutModifiers(KeyModifiers modifiers)
     {

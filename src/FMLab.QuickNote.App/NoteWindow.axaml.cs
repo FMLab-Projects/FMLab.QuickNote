@@ -4,6 +4,7 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using FMLab.QuickNote.App.Shortcuts;
 using FMLab.QuickNote.Core.Editor;
@@ -51,13 +52,21 @@ public partial class NoteWindow : Window
 
         ApplySavedPlacement();
 
-        Opened += (_, _) => BodyTextBox.Focus();
-        Activated += (_, _) => BodyTextBox.Focus();
+        // Foca o corpo ao mostrar a janela, mas sem roubar o foco do usuário se ele já estiver
+        // editando o título (achado do teste manual da Fase 11: Activated também dispara numa
+        // reativação externa da janela já visível, não só na primeira exibição).
+        Opened += (_, _) => FocusBodyUnlessAlreadyEditing();
+        Activated += (_, _) => FocusBodyUnlessAlreadyEditing();
 
         KeyDown += OnKeyDown;
         Closing += OnClosing;
 
-        BodyTextBox.KeyDown += OnBodyKeyDown;
+        // Tunnel (fase de "preview", roda antes do processamento interno do TextBox): sem isso,
+        // o TextBox consome Ctrl+Enter/Ctrl+Shift+C sozinho (AcceptsReturn) antes do nosso
+        // handler ver o evento, e "Concluir"/"Alternar checkbox" nunca disparam (achado do
+        // teste manual da Fase 11 — Tab e Enter simples "funcionavam por acidente" porque o
+        // TextBox não marca esses dois como Handled internamente, mas Ctrl+Enter ele marca).
+        BodyTextBox.AddHandler(KeyDownEvent, OnBodyKeyDown, RoutingStrategies.Tunnel);
         BodyTextBox.PointerReleased += OnBodyPointerReleased;
 
         // Autosave (debounce curto): reduz a perda de conteúdo se o processo cair antes do
@@ -79,6 +88,14 @@ public partial class NoteWindow : Window
     {
         _autosaveTimer.Stop();
         _autosaveTimer.Start();
+    }
+
+    private void FocusBodyUnlessAlreadyEditing()
+    {
+        if (!TitleTextBox.IsFocused && !BodyTextBox.IsFocused)
+        {
+            BodyTextBox.Focus();
+        }
     }
 
     private void ApplySavedPlacement()
@@ -135,7 +152,7 @@ public partial class NoteWindow : Window
                 : StructuredTextEditor.Indent(text, selectionStart, selectionEnd));
             e.Handled = true;
         }
-        else if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None)
+        else if (e.Key is Key.Enter or Key.Return && e.KeyModifiers == KeyModifiers.None)
         {
             ApplyEdit(StructuredTextEditor.HandleEnter(text, selectionStart, selectionEnd));
             e.Handled = true;
