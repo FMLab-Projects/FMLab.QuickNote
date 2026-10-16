@@ -44,7 +44,7 @@
             <ListBox x:Name="NotesListBox" Background="Transparent" BorderThickness="0">
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="app:NoteListItem">
-                        <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,6">
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,6">
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding DisplayTitle}"
                                            Foreground="White"
@@ -62,6 +62,12 @@
                             <Button Grid.Column="2"
                                     Content="{Binding ToggleActionLabel}"
                                     Click="OnToggleCompletionClick"
+                                    Tag="{Binding}" />
+                            <Button Grid.Column="3"
+                                    Content="{Binding DeleteActionLabel}"
+                                    IsVisible="{Binding CanDelete}"
+                                    Margin="6,0,0,0"
+                                    Click="OnDeleteClick"
                                     Tag="{Binding}" />
                         </Grid>
                     </DataTemplate>

@@ -28,6 +28,7 @@ public sealed class ShortcutRow(ShortcutAction action, string comboText)
         ShortcutAction.Complete => "Concluir nota atual",
         ShortcutAction.OpenHistory => "Abrir histórico",
         ShortcutAction.ToggleCheckbox => "Alternar checkbox",
+        ShortcutAction.OpenArchived => "Abrir notas arquivadas",
         _ => action.ToString(),
     };
 }

@@ -27,6 +27,7 @@ public partial class HistoryWindow : Window
     private readonly IFontSettingsStore _fontSettingsStore;
     private readonly DispatcherTimer _searchDebounceTimer;
     private IReadOnlyDictionary<ShortcutAction, KeyCombo> _bindings;
+    private Guid? _pendingDeleteId;
 
     /// <summary>Disparado quando o usuário pede pra reabrir uma nota da lista no editor principal.</summary>
     public event Action<Note>? NoteReopenRequested;
@@ -84,9 +85,18 @@ public partial class HistoryWindow : Window
     /// <summary>Recarrega a lista com os dados mais recentes e mostra a janela.</summary>
     public void ShowAndRefresh()
     {
+        _pendingDeleteId = null;
         Reload();
         Show();
         Activate();
+    }
+
+    /// <summary>Mostra a janela já filtrada nas notas concluídas (arquivadas).</summary>
+    public void ShowArchived()
+    {
+        FilterComboBox.SelectedIndex = 2;
+        SearchTextBox.Text = string.Empty;
+        ShowAndRefresh();
     }
 
     private void Reload()
@@ -104,7 +114,7 @@ public partial class HistoryWindow : Window
         var query = SearchTextBox.Text;
         var notes = string.IsNullOrWhiteSpace(query) ? statusFiltered : NoteSearch.Search(statusFiltered, query);
 
-        NotesListBox.ItemsSource = notes.Select(n => new NoteListItem(n)).ToList();
+        NotesListBox.ItemsSource = notes.Select(n => new NoteListItem(n, n.Id == _pendingDeleteId)).ToList();
         EmptyStateText.IsVisible = notes.Count == 0;
         EmptyStateText.Text = statusFiltered.Count == 0
             ? "Nenhuma nota encontrada."
@@ -137,6 +147,27 @@ public partial class HistoryWindow : Window
         else
         {
             _noteRepository.Reactivate(item.Note.Id);
+        }
+
+        Reload();
+    }
+
+    /// <summary>Exclusão definitiva em dois cliques: o primeiro arma ("Confirmar?"), o segundo exclui.</summary>
+    private void OnDeleteClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: NoteListItem { CanDelete: true } item })
+        {
+            return;
+        }
+
+        if (_pendingDeleteId == item.Note.Id)
+        {
+            _pendingDeleteId = null;
+            _noteRepository.Delete(item.Note.Id);
+        }
+        else
+        {
+            _pendingDeleteId = item.Note.Id;
         }
 
         Reload();

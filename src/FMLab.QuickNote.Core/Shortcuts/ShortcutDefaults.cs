@@ -11,6 +11,7 @@ public static class ShortcutDefaults
         new ShortcutBinding(ShortcutAction.Complete, new KeyCombo(ShortcutModifiers.Control, "Enter")),
         new ShortcutBinding(ShortcutAction.OpenHistory, new KeyCombo(ShortcutModifiers.Control | ShortcutModifiers.Alt, "H")),
         new ShortcutBinding(ShortcutAction.ToggleCheckbox, new KeyCombo(ShortcutModifiers.Control | ShortcutModifiers.Shift, "C")),
+        new ShortcutBinding(ShortcutAction.OpenArchived, new KeyCombo(ShortcutModifiers.Control | ShortcutModifiers.Alt, "A")),
     ];
 
     /// <summary>
@@ -18,5 +19,6 @@ public static class ShortcutDefaults
     /// as demais só são tratadas localmente, com a janela em foco.
     /// </summary>
     public static bool IsGlobal(ShortcutAction action) => action
-        is ShortcutAction.NewNote or ShortcutAction.EditDraft or ShortcutAction.OpenHistory;
+        is ShortcutAction.NewNote or ShortcutAction.EditDraft or ShortcutAction.OpenHistory
+        or ShortcutAction.OpenArchived;
 }

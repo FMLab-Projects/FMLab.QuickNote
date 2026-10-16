@@ -3,9 +3,14 @@ using FMLab.QuickNote.Core.Notes;
 namespace FMLab.QuickNote.App;
 
 /// <summary>Envelope de exibição de uma <see cref="Note"/> na lista de histórico.</summary>
-public sealed class NoteListItem(Note note)
+public sealed class NoteListItem(Note note, bool isDeletePending = false)
 {
     public Note Note { get; } = note;
+
+    /// <summary>Só notas concluídas (arquivadas) podem ser excluídas.</summary>
+    public bool CanDelete => !Note.IsActive;
+
+    public string DeleteActionLabel => isDeletePending ? "Confirmar?" : "Excluir";
 
     public string DisplayTitle => NoteDisplay.GetDisplayTitle(Note);
 

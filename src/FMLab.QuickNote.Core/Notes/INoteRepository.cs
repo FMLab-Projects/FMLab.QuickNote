@@ -20,6 +20,12 @@ public interface INoteRepository
     void Reactivate(Guid id);
 
     /// <summary>
+    /// Exclui definitivamente uma nota concluída (arquivada). Lança
+    /// <see cref="InvalidOperationException"/> se a nota não existir ou ainda estiver ativa.
+    /// </summary>
+    void Delete(Guid id);
+
+    /// <summary>
     /// Adiciona um comentário à nota. Valida <paramref name="text"/> (não vazio depois de
     /// aparado, sem quebra de linha, até <see cref="Comment.MaxLength"/> caracteres) antes de
     /// gravar; lança <see cref="ArgumentException"/> se a validação falhar.

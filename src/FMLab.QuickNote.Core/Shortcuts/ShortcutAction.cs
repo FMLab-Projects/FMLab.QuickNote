@@ -9,4 +9,5 @@ public enum ShortcutAction
     Complete,
     OpenHistory,
     ToggleCheckbox,
+    OpenArchived,
 }
