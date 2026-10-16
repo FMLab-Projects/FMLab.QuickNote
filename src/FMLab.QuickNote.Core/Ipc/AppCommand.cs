@@ -6,5 +6,6 @@ public enum AppCommand
     NewNote,
     EditDraft,
     OpenHistory,
+    OpenArchived,
     Toggle,
 }

@@ -120,6 +120,37 @@ public sealed class FileNoteRepositoryTests : IDisposable
     }
 
     [Fact]
+    public void Delete_removes_a_completed_note()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+        repository.Complete(note.Id);
+
+        repository.Delete(note.Id);
+
+        Assert.Null(repository.GetById(note.Id));
+        Assert.Empty(repository.GetHistory());
+    }
+
+    [Fact]
+    public void Delete_throws_when_note_is_still_active()
+    {
+        var repository = CreateRepository();
+        var note = repository.Create(null, "content");
+
+        Assert.Throws<InvalidOperationException>(() => repository.Delete(note.Id));
+        Assert.NotNull(repository.GetById(note.Id));
+    }
+
+    [Fact]
+    public void Delete_throws_when_note_does_not_exist()
+    {
+        var repository = CreateRepository();
+
+        Assert.Throws<InvalidOperationException>(() => repository.Delete(Guid.NewGuid()));
+    }
+
+    [Fact]
     public void GetHistory_returns_active_and_completed_notes_ordered_by_updated_at_descending()
     {
         var repository = CreateRepository();

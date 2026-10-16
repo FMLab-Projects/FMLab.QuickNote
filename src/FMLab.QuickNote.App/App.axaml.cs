@@ -99,6 +99,9 @@ public partial class App : Application
             case AppCommand.OpenHistory:
                 _historyWindow?.ShowAndRefresh();
                 break;
+            case AppCommand.OpenArchived:
+                _historyWindow?.ShowArchived();
+                break;
             case AppCommand.Toggle:
                 _noteWindow?.ToggleVisibility();
                 break;
@@ -123,6 +126,9 @@ public partial class App : Application
         var openHistoryItem = new NativeMenuItem("Histórico");
         openHistoryItem.Click += (_, _) => HandleCommand(AppCommand.OpenHistory);
 
+        var openArchivedItem = new NativeMenuItem("Notas arquivadas");
+        openArchivedItem.Click += (_, _) => HandleCommand(AppCommand.OpenArchived);
+
         var settingsItem = new NativeMenuItem("Configurações");
         settingsItem.Click += (_, _) => _settingsWindow?.ShowAndRefresh();
 
@@ -138,6 +144,7 @@ public partial class App : Application
         trayIcon.Menu.Items.Add(newNoteItem);
         trayIcon.Menu.Items.Add(editDraftItem);
         trayIcon.Menu.Items.Add(openHistoryItem);
+        trayIcon.Menu.Items.Add(openArchivedItem);
         trayIcon.Menu.Items.Add(settingsItem);
         trayIcon.Menu.Items.Add(helpItem);
         trayIcon.Menu.Items.Add(new NativeMenuItemSeparator());
@@ -202,6 +209,7 @@ public partial class App : Application
         ShortcutAction.NewNote => AppCommand.NewNote,
         ShortcutAction.EditDraft => AppCommand.EditDraft,
         ShortcutAction.OpenHistory => AppCommand.OpenHistory,
+        ShortcutAction.OpenArchived => AppCommand.OpenArchived,
         _ => throw new ArgumentOutOfRangeException(nameof(action), action, "Ação não é um atalho global."),
     };
 

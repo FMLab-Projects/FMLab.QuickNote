@@ -9,6 +9,7 @@ public static class AppCommandNames
     public const string NewNote = "new-note";
     public const string EditDraft = "edit-draft";
     public const string OpenHistory = "open-history";
+    public const string OpenArchived = "open-archived";
     public const string Toggle = "toggle";
 
     public static string ToWireName(AppCommand command) => command switch
@@ -16,6 +17,7 @@ public static class AppCommandNames
         AppCommand.NewNote => NewNote,
         AppCommand.EditDraft => EditDraft,
         AppCommand.OpenHistory => OpenHistory,
+        AppCommand.OpenArchived => OpenArchived,
         AppCommand.Toggle => Toggle,
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, null),
     };
@@ -32,6 +34,9 @@ public static class AppCommandNames
                 return true;
             case OpenHistory:
                 command = AppCommand.OpenHistory;
+                return true;
+            case OpenArchived:
+                command = AppCommand.OpenArchived;
                 return true;
             case Toggle:
                 command = AppCommand.Toggle;

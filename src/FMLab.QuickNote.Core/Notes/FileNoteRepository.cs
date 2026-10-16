@@ -73,6 +73,17 @@ public sealed class FileNoteRepository : INoteRepository
         Update(note);
     }
 
+    public void Delete(Guid id)
+    {
+        var note = GetById(id) ?? throw new InvalidOperationException($"Note '{id}' not found.");
+        if (note.IsActive)
+        {
+            throw new InvalidOperationException($"Note '{id}' is still active; complete it before deleting.");
+        }
+
+        File.Delete(GetPath(id));
+    }
+
     public void AddComment(Guid noteId, string text)
     {
         var trimmed = (text ?? string.Empty).Trim();

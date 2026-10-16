@@ -8,6 +8,7 @@ public sealed class AppCommandNamesTests
     [InlineData(AppCommand.NewNote, "new-note")]
     [InlineData(AppCommand.EditDraft, "edit-draft")]
     [InlineData(AppCommand.OpenHistory, "open-history")]
+    [InlineData(AppCommand.OpenArchived, "open-archived")]
     [InlineData(AppCommand.Toggle, "toggle")]
     public void ToWireName_and_TryParse_round_trip(AppCommand command, string wireName)
     {
