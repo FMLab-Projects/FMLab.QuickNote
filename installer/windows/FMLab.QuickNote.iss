@@ -3,7 +3,7 @@
 ; Espera o binário self-contained/single-file já publicado em dist/win-x64
 ; (via publish.ps1 ou pelo workflow de release). Compilar com ISCC:
 ;
-;   ISCC installer\windows\FMLab.QuickNote.iss /DMyAppVersion="0.1.0-beta"
+;   ISCC installer\windows\FMLab.QuickNote.iss /DMyAppVersion="0.2.0-beta"
 ;
 ; MyAppVersion pode ser omitido para builds locais (usa um valor default).
 
