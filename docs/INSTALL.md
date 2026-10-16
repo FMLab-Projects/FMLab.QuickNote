@@ -63,7 +63,7 @@ instalado), por RID em `dist/<rid>/`:
     ou rodar como parte de uma sessão que já tenha esse acesso liberado.
   - Se o hook global não iniciar, o app continua funcionando: o erro é
     logado (`[GlobalHotkeyService] Hotkey global indisponível...`) e a
-    bandeja/CLI (`--new-note`, `--edit-draft`, `--open-history`, `--toggle`)
+    bandeja/CLI (`--new-note`, `--edit-draft`, `--open-history`, `--open-archived`, `--toggle`)
     seguem operando normalmente — esse é o Plano B documentado na ADR 0001.
 - **Autostart**: tela de Configurações → "Iniciar com o sistema operacional"
   escreve `~/.config/autostart/fmlab-quicknote.desktop`, reconhecido pelas

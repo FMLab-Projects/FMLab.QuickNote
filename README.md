@@ -27,13 +27,14 @@ da bandeja):
 | Nova nota | Global | `Ctrl+Alt+N` |
 | Editar rascunho anterior | Global | `Ctrl+Alt+Q` |
 | Abrir histórico | Global | `Ctrl+Alt+H` |
+| Abrir notas arquivadas (concluídas) | Global | `Ctrl+Alt+A` |
 | Fechar janela (salva) | Janela ativa | `Esc` |
 | Concluir nota atual | Janela ativa | `Ctrl+Enter` |
 | Indentar / recuar item de lista | Editor | `Tab` / `Shift+Tab` |
 | Alternar checkbox do item atual | Editor | `Ctrl+Shift+C` |
 
 O menu da bandeja também dá acesso a Nova nota, Editar rascunho, Histórico,
-Configurações e Sair (o único jeito de encerrar o processo de verdade).
+Notas arquivadas, Configurações e Sair (o único jeito de encerrar o processo de verdade).
 
 O editor é texto simples estruturado (sem rich text): `- ` inicia uma lista
 com marcador (`Enter` continua a lista, linha vazia sai dela) e `- [ ] texto`
@@ -48,6 +49,10 @@ com ações pra reabrir ou concluir/reativar cada uma direto da lista, um
 campo de busca por aproximação (título + conteúdo, tolera acentuação
 diferente e pequenos erros de digitação) combinável com o filtro de
 status, e um footer com a contagem total de notas/ativas/concluídas.
+"Arquivadas" são as notas concluídas: `Ctrl+Alt+A` (ou `--open-archived`)
+abre o histórico já filtrado nelas, e cada uma tem um botão "Excluir" que
+apaga a nota de vez após uma confirmação (segundo clique em "Confirmar?").
+Notas ativas não podem ser excluídas.
 
 Cada nota também aceita comentários curtos (até 140 caracteres, sem
 formatação): a seção "Comentários" no rodapé da janela principal lista os
